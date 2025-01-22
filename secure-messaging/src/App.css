@@ -1,0 +1,52 @@
+.message-list {
+  padding: 20px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background-color: #f9f9f9;
+}
+
+.message-bubble {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 60%;
+}
+
+.message-bubble.you {
+  background-color: #3498db;
+  color: white;
+  align-self: flex-end;
+  text-align: right;
+}
+
+.message-bubble.other {
+  background-color: #ecf0f1;
+  color: black;
+}
+
+.message-input {
+  display: flex;
+  padding: 10px;
+  background-color: #f4f4f4;
+}
+
+.message-input input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 20px;
+}
+
+.message-input button {
+  margin-left: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background-color: #3498db;
+  color: white;
+  cursor: pointer;
+}
+
+.message-input button:hover {
+  background-color: #2980b9;
+}
