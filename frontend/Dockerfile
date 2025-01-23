@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json .
 
-RUN npm install --legacy-peer-deps. --save-dev web-vitals
+RUN npm install socket.io-client --save && typings install dt~socket.io-client --save --global && npm install --legacy-peer-deps --save-dev web-vitals
 
 COPY . .
 
