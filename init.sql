@@ -1,12 +1,6 @@
--- Creation of the database
-CREATE DATABASE SecureMessaging;
-
--- Use the database
-USE SecureMessaging;
-
 -- Table for users
 CREATE TABLE Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -17,16 +11,19 @@ CREATE TABLE Users (
 
 -- Table for conversations
 CREATE TABLE Conversations (
-    conversation_id INT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id SERIAL PRIMARY KEY,
     name VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ENUM type for roles
+CREATE TYPE user_role AS ENUM ('admin', 'member');
 
 -- Table for conversation participants
 CREATE TABLE ConversationParticipants (
     conversation_id INT NOT NULL,
     user_id INT NOT NULL,
-    role ENUM('admin', 'member') DEFAULT 'member',
+    role user_role DEFAULT 'member',
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (conversation_id, user_id),
     FOREIGN KEY (conversation_id) REFERENCES Conversations(conversation_id) ON DELETE CASCADE,
@@ -35,17 +32,34 @@ CREATE TABLE ConversationParticipants (
 
 -- Table for messages
 CREATE TABLE Messages (
-    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    message_id SERIAL PRIMARY KEY,
     conversation_id INT NOT NULL,
     sender_id INT NOT NULL,
     content TEXT NOT NULL,
     encrypted BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    delivered_at TIMESTAMP NULL DEFAULT NULL,
+    received_at TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (conversation_id) REFERENCES Conversations(conversation_id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
--- Table for message receipts (tracking read status)
+-- Trigger to auto-update "updated_at"
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = CURRENT_TIMESTAMP;
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_timestamp
+BEFORE UPDATE ON Messages
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
+-- Table for message receipts
 CREATE TABLE MessageReceipts (
     message_id INT NOT NULL,
     recipient_id INT NOT NULL,
