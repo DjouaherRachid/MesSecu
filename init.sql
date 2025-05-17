@@ -59,16 +59,6 @@ BEFORE UPDATE ON Messages
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_column();
 
--- Table for message receipts
-CREATE TABLE MessageReceipts (
-    message_id INT NOT NULL,
-    recipient_id INT NOT NULL,
-    read_at TIMESTAMP NULL,
-    PRIMARY KEY (message_id, recipient_id),
-    FOREIGN KEY (message_id) REFERENCES Messages(message_id) ON DELETE CASCADE,
-    FOREIGN KEY (recipient_id) REFERENCES Users(user_id) ON DELETE CASCADE
-);
-
 -- Indexes for faster queries
 CREATE INDEX idx_user_email ON Users(email);
 CREATE INDEX idx_conversation_name ON Conversations(name);
