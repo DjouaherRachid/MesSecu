@@ -1,11 +1,11 @@
 version: "3.8"
 services:
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:3000"
-  #   stdin_open: true
-  #   tty: true
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
 
   backend:
     build: ./backend
