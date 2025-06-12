@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import socket from "./socket";
+import socket from "../../api/socket";
 import MessageList from "./message_list";
 import MessageInput from "./message_input";
 
@@ -53,7 +53,7 @@ export default ChatRoom;*/
 
 const ChatRoom = () => {
   const [messages, setMessages] = useState([
-    { sender: "Alice", text: "Salut, ça va ?" },
+    { sender: "Alice", text: "test les gars ?" },
     { sender: "Bob", text: "Oui et toi ?" },
     { sender: "You", text: "Super, merci !" },
     { sender: "Alice", text: "On se voit demain ?" },

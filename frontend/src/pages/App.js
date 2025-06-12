@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 //import Login from "./login";
-import ChatRoom from "./chatroom";
-import './App.css';
+import ChatRoom from "../components/chat/chatroom";
+import '../styles/App.css';
 
 function App() {
   const [token, setToken] = useState(null);
