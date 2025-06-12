@@ -1,16 +1,15 @@
-import React, { useState } from "react";
-//import Login from "./login";
-import ChatRoom from "../components/chat/chatroom";
-import '../styles/App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './Home';
+import Login from '../components/auth/login';
 
 function App() {
-  const [token, setToken] = useState(null);
-
-//  if (!token) {
-//    return <Login onLoginSuccess={setToken} />;
-//  }
-
-  return <ChatRoom />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
+  );
 }
-
 export default App;

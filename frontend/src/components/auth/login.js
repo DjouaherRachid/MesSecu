@@ -1,37 +1,26 @@
-/*import React, { useState } from "react";
-import axios from "./api";
+import { useState } from 'react';
+import axios from '../../api/api'; 
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/login", { email, password });
-      console.log("Login success:", response.data);
-    } catch (error) {
-      console.error("Login failed:", error);
+      const res = await axios.post('/auth/login', { email, password });
+      localStorage.setItem('token', res.data.token); // stocke le JWT
+      // rediriger ou afficher un succès
+    } catch (err) {
+      console.error('Login error:', err);
     }
   };
 
   return (
     <form onSubmit={handleLogin}>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button type="submit">Login</button>
+      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+      <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Mot de passe" />
+      <button type="submit">Se connecter</button>
     </form>
   );
-};
-
-export default Login;*/
+}

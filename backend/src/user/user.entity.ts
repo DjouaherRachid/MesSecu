@@ -8,7 +8,7 @@ import {
 import { Message } from '../message/message.entity';
 import { ConversationParticipant } from '../conversation/conversation-participant.entity';
 
-@Entity('Users')
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   user_id: number;
@@ -22,10 +22,10 @@ export class User {
   @Column()
   password_hash: string;
 
-  @Column({ type: 'text' })
+  @Column('text')
   public_key: string;
 
-  @Column({ type: 'text' })
+  @Column('text')
   private_key_encrypted: string;
 
   @CreateDateColumn()

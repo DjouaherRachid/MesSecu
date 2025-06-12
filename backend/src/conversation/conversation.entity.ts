@@ -8,7 +8,7 @@ import {
 import { ConversationParticipant } from './conversation-participant.entity';
 import { Message } from '../message/message.entity';
 
-@Entity('Conversations')
+@Entity('conversations')
 export class Conversation {
   @PrimaryGeneratedColumn()
   conversation_id: number;

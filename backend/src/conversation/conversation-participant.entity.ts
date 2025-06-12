@@ -14,7 +14,7 @@ export enum UserRole {
   MEMBER = 'member',
 }
 
-@Entity('ConversationParticipants')
+@Entity('conversation_participants')
 export class ConversationParticipant {
   @PrimaryColumn()
   conversation_id: number;

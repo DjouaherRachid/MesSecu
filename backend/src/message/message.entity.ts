@@ -10,7 +10,7 @@ import {
 import { Conversation } from '../conversation/conversation.entity';
 import { User } from '../user/user.entity';
 
-@Entity('Messages')
+@Entity('messages')
 export class Message {
   @PrimaryGeneratedColumn()
   message_id: number;
