@@ -13,19 +13,22 @@ services:
   #   stdin_open: true
   #   tty: true
 
-
   backend:
     build: ./backend
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules  
+    command: npm run start:dev
+    environment:
+      - CHOKIDAR_USEPOLLING=true  
     stdin_open: true
     tty: true
     depends_on:
       - db
     env_file:
       - .env
-    volumes:
-      - ./backend:/app
 
   db:
     image: postgres:latest

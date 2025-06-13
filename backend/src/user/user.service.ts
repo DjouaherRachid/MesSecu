@@ -1,7 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
+import {
+  UsernameMissingException,
+  EmailMissingException,
+  UsernameAlreadyExistsException,
+  EmailAlreadyExistsException,
+  UserNotFoundException,
+} from '../exceptions/user.exception';
 
 @Injectable()
 export class UserService {
@@ -10,28 +20,61 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  create(user: Partial<User>) {
-    return this.userRepository.save(user);
+  async create(user: Partial<User>) {
+    console.log('[UserService] Tentative de création de l’utilisateur :', user);
+
+    if (!user.username) throw new UsernameMissingException();
+    if (!user.email) throw new EmailMissingException();
+
+    try {
+      const savedUser = await this.userRepository.save(user);
+      console.log('[UserService] Utilisateur enregistré avec succès :', savedUser);
+      return savedUser;
+    } catch (error: any) {
+      if (error.code === '23505') {
+        if (error.detail?.includes('username')) throw new UsernameAlreadyExistsException();
+        if (error.detail?.includes('email')) throw new EmailAlreadyExistsException();
+      }
+
+      console.error('[UserService] Erreur inconnue :', error);
+      throw new InternalServerErrorException('Erreur inattendue lors de la création.');
+    }
   }
 
-  findAll() {
-    return this.userRepository.find();
+  async findAll() {
+    return await this.userRepository.find();
   }
 
-  findOne(id: number) {
-    return this.userRepository.findOne({ where: { user_id: id } });
+  async findOne(id: number) {
+    const user = await this.userRepository.findOne({ where: { user_id: id } });
+    if (!user) throw new UserNotFoundException(id);
+    return user;
   }
 
-  findByEmail(email: string) {
+  async findByEmail(email: string) {
     return this.userRepository.findOne({ where: { email } });
   }
 
   async update(id: number, updateData: Partial<User>) {
-    await this.userRepository.update(id, updateData);
-    return this.findOne(id);
+    const user = await this.findOne(id); // délégué à findOne pour l'exception si non trouvé
+
+    try {
+      await this.userRepository.update(id, updateData);
+      return this.findOne(id);
+    } catch (error) {
+      console.error('[UserService] Erreur lors de la mise à jour :', error);
+      throw new InternalServerErrorException('Erreur lors de la mise à jour.');
+    }
   }
 
-  remove(id: number) {
-    return this.userRepository.delete(id);
+  async remove(id: number) {
+    const user = await this.findOne(id); // exception si non trouvé
+    try {
+      await this.userRepository.delete(id);
+      return { message: `Utilisateur ${id} supprimé.` };
+    } catch (error) {
+      console.error('[UserService] Erreur lors de la suppression :', error);
+      throw new InternalServerErrorException('Erreur lors de la suppression.');
+    }
   }
 }

@@ -2,6 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './message.entity';
+import {
+  MessageContentMissingException,
+  MessageSenderMissingException,
+  MessageConversationMissingException,
+  MessageNotFoundException,
+} from '../exceptions/message.exception';
 
 @Injectable()
 export class MessageService {
@@ -10,8 +16,18 @@ export class MessageService {
     private messageRepository: Repository<Message>,
   ) {}
 
-  create(message: Partial<Message>) {
-    return this.messageRepository.save(message);
+  async create(message: Partial<Message>) {
+    if (!message.content) {
+      throw new MessageContentMissingException();
+    }
+    if (!message.sender_id) {
+      throw new MessageSenderMissingException();
+    }
+    if (!message.conversation_id) {
+      throw new MessageConversationMissingException();
+    }
+
+    return await this.messageRepository.save(message);
   }
 
   findAll() {
@@ -26,11 +42,21 @@ export class MessageService {
   }
 
   async update(id: number, data: Partial<Message>) {
+    const existing = await this.messageRepository.findOne({ where: { message_id: id } });
+    if (!existing) {
+      throw new MessageNotFoundException(id);
+    }
+
     await this.messageRepository.update(id, data);
     return this.messageRepository.findOne({ where: { message_id: id } });
   }
 
-  remove(id: number) {
+  async remove(id: number) {
+    const existing = await this.messageRepository.findOne({ where: { message_id: id } });
+    if (!existing) {
+      throw new MessageNotFoundException(id);
+    }
+
     return this.messageRepository.delete(id);
   }
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConversationParticipant } from './conversation-participant.entity';
+import { UserOrConversationIdMissingException } from '../exceptions/conversation.exception';
 
 @Injectable()
 export class ConversationParticipantService {
@@ -10,7 +11,10 @@ export class ConversationParticipantService {
     private cpRepository: Repository<ConversationParticipant>,
   ) {}
 
-  create(data: Partial<ConversationParticipant>) {
+  async create(data: Partial<ConversationParticipant>) {
+    if (!data.user_id || !data.conversation_id) {
+      throw new UserOrConversationIdMissingException();
+    }
     return this.cpRepository.save(data);
   }
 
