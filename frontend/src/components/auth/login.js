@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from '../../api/api'; 
+import axios from "axios"; 
 
 export default function Login() {
   const [email, setEmail] = useState('');
