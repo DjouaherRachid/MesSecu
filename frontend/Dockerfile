@@ -1,22 +1,15 @@
-# Use the latest LTS version of Node.js
-FROM node:18-alpine
- 
-# Set the working directory inside the container
-WORKDIR /app
- 
-# Copy package.json and package-lock.json
-COPY package*.json ./
- 
-# Install dependencies
-RUN npm install
- 
-# Copy the rest of your application files
-COPY . .
- 
-ENV NODE_OPTIONS=--openssl-legacy-provider
+FROM node:18
 
-# Expose the port your app runs on
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+# PAS besoin de COPY . . car le code est monté via volumes
+
 EXPOSE 3000
- 
-# Define the command to run your app
+
+ENV CHOKIDAR_USEPOLLING=true
+ENV HOST=0.0.0.0
+
 CMD ["npm", "start"]

@@ -3,8 +3,20 @@ import { AppModule } from './app.module';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Chargement des certificats HTTPS depuis le dossier certs à la racine
+  const httpsOptions = {
+    key: fs.readFileSync(path.resolve(__dirname, '../certs/key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, '../certs/cert.pem')),
+  };
+
+  // Création de l'app Nest avec HTTPS
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions,
+  });
 
   // Configuration de Swagger
   const config = new DocumentBuilder()
