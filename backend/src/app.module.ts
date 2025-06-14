@@ -8,6 +8,7 @@ import { ConversationParticipantModule } from './conversation/conversation-parti
 import { MessageModule } from './message/message.module';
 import { User } from './user/user.entity';
 import { ConversationParticipant } from './conversation/conversation-participant.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ConversationParticipant } from './conversation/conversation-participant
     ConversationModule,
     ConversationParticipantModule,
     MessageModule,
+    AuthModule
   ],
 })
 export class AppModule {}
