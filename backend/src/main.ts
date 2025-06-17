@@ -9,8 +9,8 @@ import * as path from 'path';
 async function bootstrap() {
   // Chargement des certificats HTTPS depuis le dossier certs à la racine
   const httpsOptions = {
-    key: fs.readFileSync(path.resolve(__dirname, '../certs/key.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, '../certs/cert.pem')),
+    key: fs.readFileSync(path.resolve('./certs/localhost-key.pem')),
+    cert: fs.readFileSync(path.resolve('./certs/localhost.pem')),
   };
 
   // Création de l'app Nest avec HTTPS

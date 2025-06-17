@@ -9,6 +9,7 @@ import { MessageModule } from './message/message.module';
 import { User } from './user/user.entity';
 import { ConversationParticipant } from './conversation/conversation-participant.entity';
 import { AuthModule } from './auth/auth.module';
+import { SocketModule } from './socket/socket.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { AuthModule } from './auth/auth.module';
     ConversationModule,
     ConversationParticipantModule,
     MessageModule,
-    AuthModule
+    AuthModule,
+    SocketModule
   ],
 })
 export class AppModule {}
