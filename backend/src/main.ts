@@ -18,6 +18,11 @@ async function bootstrap() {
     httpsOptions,
   });
 
+  app.enableCors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true, 
+  });
+
   // Configuration de Swagger
   const config = new DocumentBuilder()
     .setTitle('API Secure Messaging')
