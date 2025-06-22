@@ -10,9 +10,14 @@ const SignIn = () => {
     const navigate = useNavigate();
 
     const [signin_email, setEmail] = useState('');
+    const [signin_password, setPassword] = useState('');
   
     const handleEmailChange = (e) => {
       setEmail(e.target.value);
+    };
+
+    const handlePasswordChange = (e) => {
+      setPassword(e.target.value);
     };
   
     const handleSigninSubmission = async (e) => {
@@ -25,7 +30,10 @@ const SignIn = () => {
 
       console.log("signin_email", signin_email);
 
-      instance.get(`/user/signin/${signin_email}`)
+      instance.post('/auth/login', {
+        email: signin_email,
+        password: signin_password,
+      })
       .then(response => {
         // Traitement pour une création réussie
         console.log('User created successfully with ID:', response.data);
@@ -69,6 +77,13 @@ const SignIn = () => {
                   type="email"
                   value={signin_email}
                   onChange={handleEmailChange}
+                  required
+                />
+                <label>Mot de passe</label>
+                <input
+                  type="password"
+                  value={signin_password}
+                  onChange={handlePasswordChange}
                   required
                 />
               </div>

@@ -25,13 +25,16 @@ const SignUp = () => {
       setPassword(e.target.value);
     };
 
-    // function validatePassword(password) {
-    //   const passwordRegex =
-    //     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    function validatePassword(password) {
+      const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
 
-    //   return passwordRegex.test(password);
-    // };
-  
+      // Vérifie qu'il n'y a aucun espace
+      const hasNoSpaces = !/\s/.test(password);
+
+      return passwordRegex.test(password) && hasNoSpaces;
+    }
+
     const handleSignupSubmission = async (e) => {
       e.preventDefault();
       const valid = await validate(signup_email); 
@@ -40,13 +43,14 @@ const SignUp = () => {
         return;
       }
 
-      console.log("signup_email",signup_email);
+      const isValidPassword = validatePassword(signup_password);
+      console.log("signup_password", signup_password);
+      console.log("isValidPassword", isValidPassword);
 
-      // const isValidPassword = validatePassword(signup_password);
-      // if (!isValidPassword) {
-      //   alert('Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
-      //   return;
-      // }
+      if (!isValidPassword) {
+        alert('Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        return;
+      }
 
       instance.post('/auth/register', {
         username: signup_username,
