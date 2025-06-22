@@ -39,9 +39,14 @@ const SignIn = () => {
         console.log('User created successfully with ID:', response.data);
         console.log("email", signin_email);
         Cookies.set('email', signin_email, { expires: 1 });
+        Cookies.set('accessToken', response.data.accessToken, {
+          expires: 15,            
+          secure: true,           
+          sameSite: 'Strict',     
+        });
 
         alert('Signed in succesfully !');
-        navigate('/doubleAuth');
+        navigate('/homeConnected');
       })
       .catch(error => {
         if (error.response) {
@@ -64,9 +69,9 @@ const SignIn = () => {
         <div className="animated-background">
         <div className='center-container'>
           <div>
-                <div class="wave"></div>
-                <div class="wave"></div>
-                <div class="wave"></div>
+                <div className="wave"></div>
+                <div className="wave"></div>
+                <div className="wave"></div>
           </div>
           <div className="form-container">
             <h2>Se connecter</h2>

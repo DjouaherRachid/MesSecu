@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const config = {
   backendUrl: process.env.REACT_APP_BACKEND_URL || 'https://localhost:8000', // Default to localhost if not set
@@ -13,15 +14,15 @@ const instance = axios.create({
   },
 });
 
-instance.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      console.log('Session is invalid');
-      alert('Session is invalid');
+instance.interceptors.request.use(
+  config => {
+    const token = Cookies.get('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return Promise.reject(error);
-  }
+    return config;
+  },
+  error => Promise.reject(error)
 );
 
 export default instance;

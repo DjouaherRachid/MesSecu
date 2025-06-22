@@ -1,4 +1,4 @@
-// socket/guards/ws-jwt.guard.ts
+// auth/guards/ws-jwt.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
+import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
@@ -36,3 +37,6 @@ export class WsJwtGuard implements CanActivate {
     }
   }
 }
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}

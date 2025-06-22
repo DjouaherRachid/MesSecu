@@ -87,9 +87,9 @@ const SignUp = () => {
       <div className="animated-background">
       <div className='center-container'>
           <div>
-                <div class="wave"></div>
-                <div class="wave"></div>
-                <div class="wave"></div>
+                <div className="wave"></div>
+                <div className="wave"></div>
+                <div className="wave"></div>
           </div>
         <div className="form-container">
           <h2>S'inscrire</h2>
