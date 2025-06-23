@@ -1,0 +1,64 @@
+.conversation {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.conversation:hover {
+  background-color: #f9f9f9;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.conversation-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.top-row,
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.username {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #333;
+}
+
+.time {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.last-message {
+  font-size: 0.9rem;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+.seen-check {
+  font-size: 0.8rem;
+  margin-left: 8px;
+  color: #bbb;
+}
+
+.seen-check.seen {
+  color: #4caf50;
+}

@@ -1,0 +1,138 @@
+.left-sidebar{
+    height: 100%;
+    width: 30%;
+    background-color: #f1f1f1;
+    position: fixed !important;
+    z-index: 1;
+    overflow: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    padding: 1%;
+    margin: 1%;
+}
+
+.sidebar-header {
+    padding: 5%;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #008d97;
+    flex-direction: row;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.add-icon {
+    font-size: 24px;
+    color: #008d97;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.add-button {
+    background-color: #008d97;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: fit-content;
+    height: fit-content;
+}
+
+.add-button:hover {
+    background-color: #006f7a;
+}
+
+ul.vertical {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background-color: #f1f1f1;
+    border-top: 2px solid #000;
+}
+
+ul.vertical li a {
+    display: block;
+    color: #000;
+    padding: 8px 0 8px 16px;
+    text-decoration: none;
+}
+
+ul.vertical li a:hover:not(.active) {
+    background-color: #555;
+    color:white;
+}
+
+ul.vertical li a:hover {
+    background-color: #025258;
+    color:white;
+}
+
+ul.vertical a.active {
+    background-color: #008d97;
+    color:white;
+}
+
+ul.gray {
+border: 1px solid #e7e7e7;
+    background-color: #f3f3f3;
+}
+
+ul.gray li a {
+    display: block;
+    color: #666;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+ul.gray li a:hover:not(.active) {
+    background-color: #ddd;
+}
+
+ul.gray li a.active {
+    color: white;
+    background-color: #008d97;
+}
+.rightli {
+float:right;
+}
+
+ul.divider li {
+    float: left;
+    border-right:1px solid #bbb;
+}
+
+ul.divider li:last-child {
+    border-right: none;
+}
+ul.border {
+    border: 1px solid #555;
+}
+
+ul.border li a {
+    padding: 8px 16px;
+}
+
+ul.border li {
+    text-align: center;
+    border-bottom: 1px solid #555;
+}
+
+ul.border li:last-child {
+    border-bottom: none;
+}
+
+/* Style pour la classe active */
+li.active {
+    background-color: #008d97;
+    color: #fff;
+}
+
+li.active:hover {
+    background-color: #0056b3;
+}

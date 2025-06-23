@@ -46,7 +46,7 @@ const SignIn = () => {
         });
 
         alert('Signed in succesfully !');
-        navigate('/homeConnected');
+        navigate('/dashboard', { replace: true });
       })
       .catch(error => {
         if (error.response) {
