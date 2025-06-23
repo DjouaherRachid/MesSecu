@@ -10,6 +10,7 @@ import { User } from './user/user.entity';
 import { ConversationParticipant } from './conversation/conversation-participant.entity';
 import { AuthModule } from './auth/auth.module';
 import { SocketModule } from './socket/socket.module';
+import { MessageRead } from './message/message-read.entity';
 
 @Module({
   imports: [
@@ -20,15 +21,15 @@ import { SocketModule } from './socket/socket.module';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [User, Message, Conversation, ConversationParticipant],
-      synchronize: true,
+      entities: [User, Message, Conversation, ConversationParticipant, MessageRead],
+      synchronize: false,
     }),
     UserModule,
     ConversationModule,
     ConversationParticipantModule,
     MessageModule,
     AuthModule,
-    SocketModule
+    SocketModule,
   ],
 })
 export class AppModule {}
