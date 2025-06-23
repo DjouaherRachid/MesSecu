@@ -1,6 +1,14 @@
 import "./conversation-card.css"; 
 
-const ConversationCard = ({ avatar, username, time, lastMessage, isSeen }) => {
+interface ConversationCardProps {
+  avatar: string;
+  username: string;
+  time: string;
+  lastMessage: string;
+  isSeen: boolean;
+}
+
+const ConversationCard: React.FC<ConversationCardProps> = ({ avatar, username, time, lastMessage, isSeen }) => {
   return (
     <div className="conversation">
       <img src={avatar} alt={`${username} avatar`} className="avatar" />

@@ -1,11 +1,11 @@
 import { useLocation } from 'react-router-dom';
 import './left-sidebar.css';
-import SearchBar from '../../searchbar/searchbar.js'
-import ConversationCard from '../../chat/conversation-card/conversation-card.js';
+import SearchBar from '../../searchbar/searchbar'
+import ConversationCard from '../conversation-card/conversation-card';
 
 const LeftSidebar = () => {
     const location = useLocation();
-    const getActiveClass = (path) => location.pathname === path ? 'active' : '';
+    const getActiveClass = (path : string) => location.pathname === path ? 'active' : '';
 
     return (
       <div className='left-sidebar'>
@@ -17,7 +17,7 @@ const LeftSidebar = () => {
             </button>
           </div>
         </div>
-        <SearchBar />
+        <SearchBar onSearch={() => {}} />
         <h2>Favoris :</h2>
         <ul className="vertical ex">
           <ConversationCard

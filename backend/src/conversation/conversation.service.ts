@@ -35,7 +35,7 @@ async create(conversation: Partial<Conversation>) {
       relations: [
         'conversation',
         'conversation.messages',
-        'conversation.messages.messageReads',
+        'conversation.messages.reads',
         'conversation.participants',
         'conversation.participants.user',
       ],

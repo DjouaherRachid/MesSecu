@@ -1,9 +1,10 @@
 import { createContext, useState, useEffect } from 'react';
 import axios from '../utils/config';
+import { ReactNode } from 'react';
 
-export const AuthContext = createContext();
+export const AuthContext = createContext({});
 
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {

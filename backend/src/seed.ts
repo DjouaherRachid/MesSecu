@@ -23,7 +23,7 @@ async function seed() {
         {
           username: 'alice',
           email: 'alice@example.com',
-          password_hash: 'hashed_pw1',
+          password_hash: '$2b$10$oPIIEIx2e1xsuAJugEuCLezKonnysaRWygGCJFZXER7iqh/TIIISe',
           public_key: 'alice_pub_key',
           private_key_encrypted: 'alice_priv_enc',
           avatar_url: 'https://example.com/avatar1.png',

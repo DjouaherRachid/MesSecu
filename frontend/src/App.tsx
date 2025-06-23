@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/home-page/home-page.js';
-import SignIn from './pages/signin-page/signin.js';
-import SignUp from './pages/signup-page/signup.js';
-import Dashboard from './pages/dashboard/dashboard.js';
-import ProtectedRoute from './utils/protected-route.js';
+import HomePage from './pages/home-page/home-page';
+import SignIn from './pages/signin-page/signin';
+import SignUp from './pages/signup-page/signup';
+import Dashboard from './pages/dashboard/dashboard';
+import ProtectedRoute from './utils/protected-route';
 import './styles/global.css';
 
 

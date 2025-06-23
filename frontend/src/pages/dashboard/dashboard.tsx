@@ -1,12 +1,8 @@
-import React, { useEffect, useState } from 'react';
 import './dashboard.css';
-import instance from '../../utils/config';
-import Cookies from 'js-cookie';
-import { useNavigate } from 'react-router-dom';
-import LeftSidebar from '../../components/chat/left-side-bar/left-sidebar.js';
+import LeftSidebar from '../../components/chat/left-side-bar/left-sidebar';
 
 const Dashboard = () => {
-
+    console.log("Dashboard component rendered");
     return(
         <div className="animated-background">
             <LeftSidebar />

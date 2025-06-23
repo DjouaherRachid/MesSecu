@@ -12,15 +12,15 @@ const SignIn = () => {
     const [signin_email, setEmail] = useState('');
     const [signin_password, setPassword] = useState('');
   
-    const handleEmailChange = (e) => {
+    const handleEmailChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
       setEmail(e.target.value);
     };
 
-    const handlePasswordChange = (e) => {
+    const handlePasswordChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
       setPassword(e.target.value);
     };
   
-    const handleSigninSubmission = async (e) => {
+    const handleSigninSubmission = async (e: { preventDefault: () => void; }) => {
       e.preventDefault();
       const valid = await validate(signin_email); 
       if (!valid) {
@@ -35,8 +35,6 @@ const SignIn = () => {
         password: signin_password,
       })
       .then(response => {
-        // Traitement pour une création réussie
-        console.log('User created successfully with ID:', response.data);
         console.log("email", signin_email);
         Cookies.set('email', signin_email, { expires: 1 });
         Cookies.set('accessToken', response.data.accessToken, {

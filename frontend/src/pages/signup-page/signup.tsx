@@ -13,19 +13,19 @@ const SignUp = () => {
     const [signup_email, setEmail] = useState('');
     const [signup_password, setPassword] = useState('');
   
-    const handleUsernameChange = (e) => {
+    const handleUsernameChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
       setUsername(e.target.value);
     };
 
-    const handleEmailChange = (e) => {
+    const handleEmailChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
       setEmail(e.target.value);
     };
 
-    const handlePasswordChange = (e) => {
+    const handlePasswordChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
       setPassword(e.target.value);
     };
 
-    function validatePassword(password) {
+    function validatePassword(password : string) {
       const passwordRegex =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
 
@@ -35,7 +35,7 @@ const SignUp = () => {
       return passwordRegex.test(password) && hasNoSpaces;
     }
 
-    const handleSignupSubmission = async (e) => {
+    const handleSignupSubmission = async (e: { preventDefault: () => void; }) => {
       e.preventDefault();
       const valid = await validate(signup_email); 
       if (!valid) {
