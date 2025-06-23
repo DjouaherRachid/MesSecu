@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { Message } from './message.entity';
 
@@ -9,6 +9,14 @@ export class MessageController {
   @Post()
   create(@Body() message: Partial<Message>) {
     return this.messageService.create(message);
+  }
+
+  @Post(':id/read')
+  async markMessageAsRead(
+    @Param('id', ParseIntPipe) messageId: number,
+    @Body('userId') userId: number,
+  ) {
+    return this.messageService.markAsRead(messageId, userId);
   }
 
   @Get()

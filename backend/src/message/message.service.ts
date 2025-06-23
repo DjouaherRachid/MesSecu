@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './message.entity';
+import { MessageRead } from './message-read.entity';
 import {
   MessageContentMissingException,
   MessageSenderMissingException,
@@ -14,6 +15,9 @@ export class MessageService {
   constructor(
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
+
+    @InjectRepository(MessageRead)
+    private messageReadRepository: Repository<MessageRead>,
   ) {}
 
   async create(message: Partial<Message>) {
@@ -58,5 +62,30 @@ export class MessageService {
     }
 
     return this.messageRepository.delete(id);
+  }
+
+
+    async markAsRead(messageId: number, userId: number) {
+    // Vérifier que le message existe
+    const message = await this.messageRepository.findOne({ where: { message_id: messageId } });
+    if (!message) {
+      throw new NotFoundException(`Message ${messageId} non trouvé`);
+    }
+
+    // Vérifier si lecture déjà enregistrée
+    const existingRead = await this.messageReadRepository.findOne({
+      where: { message_id: messageId, user_id: userId },
+    });
+
+    if (existingRead) {
+      return existingRead; 
+    }
+
+    const readEntry = this.messageReadRepository.create({
+      message_id: messageId,
+      user_id: userId,
+    });
+
+    return this.messageReadRepository.save(readEntry);
   }
 }

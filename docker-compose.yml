@@ -1,19 +1,19 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
-    environment:
-      - WATCHPACK_POLLING=true
-    stdin_open: true
-    tty: true
-    env_file:
-      - .env
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - WATCHPACK_POLLING=true
+  #   stdin_open: true
+  #   tty: true
+  #   env_file:
+  #     - .env
 
   backend:
     build: ./backend
@@ -21,14 +21,15 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - /app/node_modules  
-    command: npm run start:dev
+      - /app/node_modules
+    command: ./entrypoint.sh
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      - CHOKIDAR_USEPOLLING=true  
+      - CHOKIDAR_USEPOLLING=true
     stdin_open: true
     tty: true
-    depends_on:
-      - db
     env_file:
       - .env
 

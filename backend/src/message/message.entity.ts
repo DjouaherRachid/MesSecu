@@ -6,8 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Conversation } from '../conversation/conversation.entity';
+import { MessageRead } from './message-read.entity';  
 import { User } from '../user/user.entity';
 
 @Entity('messages')
@@ -46,4 +48,7 @@ export class Message {
   @ManyToOne(() => User, user => user.messages, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'sender_id' })
   sender: User;
+
+  @OneToMany(() => MessageRead, messageRead => messageRead.message)
+  reads: MessageRead[];
 }

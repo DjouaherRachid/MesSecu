@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { Conversation } from './conversation.entity';
+import { JwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
 
 @Controller('conversations')
 export class ConversationController {
@@ -9,6 +10,13 @@ export class ConversationController {
   @Post()
   create(@Body() conversation: Partial<Conversation>) {
     return this.conversationService.create(conversation);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async findMyConversations(@Req() req) {
+    const userId = req.user.id;
+    return this.conversationService.findByUser(userId);
   }
 
   @Get()
