@@ -1,15 +1,14 @@
-export const fetchMyConversations = async (token: string) => {
-  const res = await fetch('https://localhost:8000/conversations/me', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+import instance from "../utils/config";
 
-  if (!res.ok) {
+export const fetchMyConversations = async () => {
+  const res = await instance.get('/conversations/me');
+
+
+  if (res.status < 200 || res.status >= 300) {
     throw new Error(`Erreur API: ${res.status}`);
   }
 
-  const data = await res.json();
+  const data = res.data;
 
   // Suppression de doublons par ID si nécessaire
   return Array.from(new Map(data.map((c: { id: number; }) => [c.id, c])).values());
