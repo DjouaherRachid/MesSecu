@@ -6,31 +6,17 @@ import ConversationCard from '../conversation-card/conversation-card';
 import { fetchMyConversations } from  '../../api/conversations';
 import { fetchFavoriteConversations } from '../../api/conversation-participant'; 
 import Cookies from 'js-cookie';
+import { Conversation } from '../../types/conversation';
 
-interface Conversation {
-  id: number;
-  name: string;
-  picture?: string | null;
-  updatedAt: string;
-  other_users: {
-    username: string;
-    avatar_url: string;
-  };
-  last_message: {
-    content: string;
-    sender_name: string;
-    seen: boolean;
-    created_at: string;
-  };
+type LeftSidebarProps = {
+  setConversation: (conv: Conversation) => void;
 }
 
-const LeftSidebar: React.FC = () => {
-  const location = useLocation();
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [favorites, setFavorites] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const currentUserId = Cookies.get('userId') ? parseInt(Cookies.get('userId') as string, 10) : 0;
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -80,7 +66,7 @@ const LeftSidebar: React.FC = () => {
             lastMessage={conv.last_message.content}
             isSeen={conv.last_message.seen}
             senderName={conv.last_message.sender_name}
-            // className={getActiveClass(`/conversations/${conv.id}`)}
+            onClick={() => setConversation(conv)}
           />
         ))}
       </ul>
@@ -96,7 +82,7 @@ const LeftSidebar: React.FC = () => {
             lastMessage={conv.last_message.content}
             senderName={conv.last_message.sender_name}
             isSeen={conv.last_message.seen}
-            // className={getActiveClass(`/conversations/${conv.id}`)}
+            onClick={() => setConversation(conv)}
           />
         ))}
       </ul>

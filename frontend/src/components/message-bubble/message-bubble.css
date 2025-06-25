@@ -1,0 +1,65 @@
+.message {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.message.received {
+  background-color: #e1e1e1;
+  align-self: flex-start;
+}
+
+.message.sent {
+  background-color: #d1e7dd;
+  align-self: flex-end;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.sender-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sender-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.sender-name {
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.message-time {
+  font-size: 0.75em;
+  color: #555;
+}
+
+.message-content {
+  text-align: left;
+  word-break: break-word;
+}
+
+.message-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.message-seen {
+  font-size: 0.7em;
+  color: #555;
+}

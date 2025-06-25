@@ -8,6 +8,7 @@ interface ConversationCardProps {
   updatedAt: string;
   lastMessage: string;
   isSeen: boolean;
+  onClick?: () => void;
 }
 
 const ConversationCard: React.FC<ConversationCardProps> = ({
@@ -18,12 +19,13 @@ const ConversationCard: React.FC<ConversationCardProps> = ({
   updatedAt,
   lastMessage,
   isSeen,
+  onClick = () => {}, 
 }) => {
   const fallbackAvatar = usernames[0]?.avatar_url || '';
   const displayName = name || usernames.map(u => u.username).join(', ');
 
   return (
-    <div className="conversation">
+    <div className="conversation" onClick={onClick} >
       <img
         src={picture || fallbackAvatar}
         alt={`${displayName} avatar`}

@@ -14,7 +14,7 @@ const InputBar: React.FC<InputBarProps> = ({ onInput }) => {
     if (onInput) {
       onInput(query);
     }
-    setQuery(''); // Réinitialise le champ après envoi
+    setQuery(''); 
   };
 
   const handleInput = () => {

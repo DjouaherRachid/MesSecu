@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, Query, Req, UseGuards } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { Message } from './message.entity';
+import { JwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
 
 @Controller('messages')
 export class MessageController {
@@ -28,6 +29,20 @@ export class MessageController {
   findByConversation(@Param('conversationId') conversationId: number) {
     return this.messageService.findByConversation(conversationId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('conversation/:conversationId/paginated')
+  @Get('me')
+  async getMessagesPaginated(
+    @Req() req,
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Query('before') before?: string, 
+    @Query('limit') limit = 20,
+  ) {
+    const userId = req.user.sub;
+    return this.messageService.getMessagesPaginated(userId, conversationId, before, limit);
+  }
+
 
   @Put(':id')
   update(@Param('id') id: number, @Body() updateMessage: Partial<Message>) {

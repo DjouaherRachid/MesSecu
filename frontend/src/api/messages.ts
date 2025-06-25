@@ -1,14 +1,20 @@
-import axios from 'axios';
+import instance from "../utils/config";
 
-const API_URL = process.env.REACT_APP_BACKEND_URL
-; 
+export const fetchMessages = async (
+  conversationId: number,
+  before?: string,
+  limit: number = 20
+) => {
+  const params: Record<string, any> = { limit };
+  if (before) {
+    params.before = before;
+  }
 
-// export const fetchMessages = async (conversationId) => {
-//   const res = await axios.get(`${API_URL}/conversation/${conversationId}`);
-//   return res.data;
-// };
+  const res = await instance.get(`/messages/conversation/${conversationId}/paginated`, { params });
 
-// export const sendMessage = async (message) => {
-//   const res = await axios.post(API_URL, message);
-//   return res.data;
-// };
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`Erreur API: ${res.status}`);
+  }
+
+  return res.data; 
+};

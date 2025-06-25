@@ -1,14 +1,21 @@
 import './dashboard.css';
 import LeftSidebar from '../../components/left-side-bar/left-sidebar';
 import Chat from '../../components/chat/chat';
+import { use, useEffect, useState } from 'react';
+import { Conversation } from '../../types/conversation';
 
 const Dashboard = () => {
-    console.log("Dashboard component rendered");
+    const [conversation, setConversation] = useState([] as unknown as Conversation);
+
+    useEffect(() => {
+        console.log('Conversation', conversation);
+    }, [conversation]);
+
     return(
         <div className="animated-background">
         <div className='dashboard-container'>
-            <LeftSidebar />
-            <Chat></Chat>
+            <LeftSidebar setConversation={setConversation} />
+            <Chat conversation={conversation} />
         </div>
 
         <div>
