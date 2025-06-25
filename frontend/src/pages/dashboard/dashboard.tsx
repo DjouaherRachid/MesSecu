@@ -1,18 +1,21 @@
 import './dashboard.css';
-import LeftSidebar from '../../components/chat/left-side-bar/left-sidebar';
+import LeftSidebar from '../../components/left-side-bar/left-sidebar';
+import Chat from '../../components/chat/chat';
 
 const Dashboard = () => {
     console.log("Dashboard component rendered");
     return(
         <div className="animated-background">
+        <div className='dashboard-container'>
             <LeftSidebar />
-            <div>
-                    <div className="wave"></div>
-                    <div className="wave"></div>
-                    <div className="wave"></div>
-            </div>
-        <div className='center-container'>
-          </div>
+            <Chat></Chat>
+        </div>
+
+        <div>
+            <div className="wave"></div>
+            <div className="wave"></div>
+            <div className="wave"></div>
+        </div>
         </div>
     );
 };

@@ -150,12 +150,12 @@
   width: 100%;
 }
 
-.dashboard-container{
+/* .dashboard-container{
   display: flex;
   flex-direction: column;
   padding: 1rem;
   width: 80%;
-}
+} */
 
 .nav-button{
   width: 100px;

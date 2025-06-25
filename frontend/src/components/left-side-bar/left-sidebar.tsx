@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import './left-sidebar.css';
-import SearchBar from '../../searchbar/searchbar';
+import SearchBar from '../searchbar/searchbar';
 import ConversationCard from '../conversation-card/conversation-card';
-import { fetchMyConversations } from  '../../../api/conversations';
-import { fetchFavoriteConversations } from '../../../api/conversation-participant'; 
+import { fetchMyConversations } from  '../../api/conversations';
+import { fetchFavoriteConversations } from '../../api/conversation-participant'; 
 import Cookies from 'js-cookie';
 
 interface Conversation {
@@ -84,7 +84,7 @@ const LeftSidebar: React.FC = () => {
           />
         ))}
       </ul>
-      <h2>Contacts :</h2>
+      <h2>Conversations :</h2>
       <ul className="vertical ex">
         {conversations.map((conv) => (
           <ConversationCard
