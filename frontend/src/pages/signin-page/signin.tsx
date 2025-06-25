@@ -42,6 +42,7 @@ const SignIn = () => {
           secure: true,           
           sameSite: 'Strict',     
         });
+        Cookies.set('userId', response.data.user.id.toString(), { expires: 1 });
 
         alert('Signed in succesfully !');
         navigate('/dashboard', { replace: true });

@@ -15,7 +15,7 @@ export class ConversationController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async findMyConversations(@Req() req) {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     return this.conversationService.findByUser(userId);
   }
 

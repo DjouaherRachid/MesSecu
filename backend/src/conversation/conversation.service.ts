@@ -50,24 +50,29 @@ async create(conversation: Partial<Conversation>) {
       )[0];
 
       // Identifier si le dernier message a été lu par l'utilisateur
-      const isSeen = !!lastMessage?.reads?.some(mr => mr.user.user_id === userId);
+      const isSeen = !!lastMessage?.reads?.some(mr => mr.user_id === userId); 
 
-      // Trouver l'autre participant
-      const otherUser = conv.participants.find(p => p.user_id !== userId)?.user;
+      // Trouver les autres participants
+      const otherUsers = conv.participants
+        .filter(p => p.user_id !== userId)
+        .map(p => p.user);
 
       return {
         id: conv.conversation_id,
-        updatedAt: conv.created_at,
-        otherUser: {
-          username: otherUser?.username,
-          avatarUrl: otherUser?.avatar_url,
-        },
-        lastMessage: {
+        name: conv.name || '',
+        updated_at: conv.updated_at,
+        other_users: otherUsers.map(user => ({
+          username: user.username,
+          avatar_url: user.avatar_url,
+        })),
+        last_message: {
           content: lastMessage?.content || '',
+          sender_id: lastMessage?.sender_id || null,
+          sender_name: conv.participants.find(u => u.user_id === lastMessage?.sender_id)?.user.username || '',
           seen: isSeen,
-          createdAt: lastMessage?.created_at || null,
+          created_at: lastMessage?.created_at || null,
         },
-      };
+      };  
     });
   }
 

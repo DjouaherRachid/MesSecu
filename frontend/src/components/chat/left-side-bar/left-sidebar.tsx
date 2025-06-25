@@ -3,36 +3,49 @@ import { useLocation } from 'react-router-dom';
 import './left-sidebar.css';
 import SearchBar from '../../searchbar/searchbar';
 import ConversationCard from '../conversation-card/conversation-card';
-import { fetchMyConversations } from  '../../../api/conversations'
+import { fetchMyConversations } from  '../../../api/conversations';
+import { fetchFavoriteConversations } from '../../../api/conversation-participant'; 
+import Cookies from 'js-cookie';
+
 interface Conversation {
   id: number;
+  name: string;
+  picture?: string | null;
   updatedAt: string;
-  otherUser: {
+  other_users: {
     username: string;
-    avatarUrl: string;
+    avatar_url: string;
   };
-  lastMessage: {
+  last_message: {
     content: string;
+    sender_name: string;
     seen: boolean;
-    createdAt: string;
+    created_at: string;
   };
 }
 
 const LeftSidebar: React.FC = () => {
   const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [favorites, setFavorites] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const getActiveClass = (path: string) => (location.pathname === path ? 'active' : '');
+  const currentUserId = Cookies.get('userId') ? parseInt(Cookies.get('userId') as string, 10) : 0;
 
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const data = await fetchMyConversations();
-        setConversations(data as Conversation[]);
+        const [allConvs, favoriteConvs] = await Promise.all([
+          fetchMyConversations(),
+          fetchFavoriteConversations()
+        ]);
+
+        setConversations(allConvs as Conversation[]);
+        setFavorites(favoriteConvs as Conversation[]);
+        console.log('Conversations:', allConvs);
+        console.log('Favorite Conversations:', favoriteConvs);
       } catch (err: any) {
-        setError(err.message || 'Erreur inconnue');
+        // setError(err.message || 'Erreur inconnue');
       } finally {
         setLoading(false);
       }
@@ -57,17 +70,32 @@ const LeftSidebar: React.FC = () => {
       <SearchBar onSearch={() => {}} />
       <h2>Favoris :</h2>
       <ul className="vertical ex">
+        {favorites.map((conv) => (
+          <ConversationCard
+            key={conv.id}
+            picture={conv.picture || ''}
+            usernames={conv.other_users ? [conv.other_users] : []}
+            name={conv.name || ''}
+            updatedAt={new Date(conv.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            lastMessage={conv.last_message.content}
+            isSeen={conv.last_message.seen}
+            senderName={conv.last_message.sender_name}
+            // className={getActiveClass(`/conversations/${conv.id}`)}
+          />
+        ))}
       </ul>
       <h2>Contacts :</h2>
       <ul className="vertical ex">
         {conversations.map((conv) => (
           <ConversationCard
             key={conv.id}
-            avatar={conv.otherUser.avatarUrl}
-            username={conv.otherUser.username}
-            time={new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            lastMessage={conv.lastMessage.content}
-            isSeen={conv.lastMessage.seen}
+            picture={conv.picture || ''}
+            usernames={conv.other_users ? [conv.other_users] : []}
+            name={conv.name || ''}
+            updatedAt={new Date(conv.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            lastMessage={conv.last_message.content}
+            senderName={conv.last_message.sender_name}
+            isSeen={conv.last_message.seen}
             // className={getActiveClass(`/conversations/${conv.id}`)}
           />
         ))}

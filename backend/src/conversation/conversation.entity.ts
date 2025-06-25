@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ConversationParticipant } from './conversation-participant.entity';
 import { Message } from '../message/message.entity';
@@ -16,6 +17,9 @@ export class Conversation {
   @Column({ nullable: true })
   name: string;
 
+  @Column({ nullable: true })
+  picture_url: string;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -24,4 +28,7 @@ export class Conversation {
 
   @OneToMany(() => Message, message => message.conversation)
   messages: Message[];
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }

@@ -17,7 +17,9 @@ CREATE TABLE users (
 CREATE TABLE conversations (
     conversation_id SERIAL PRIMARY KEY,
     name VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    picture_url VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Enum for user roles
@@ -28,6 +30,7 @@ CREATE TABLE conversation_participants (
     conversation_id INT NOT NULL,
     user_id INT NOT NULL,
     role user_role DEFAULT 'member',
+    is_favorite BOOLEAN DEFAULT false,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (conversation_id, user_id),
     FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id) ON DELETE CASCADE,

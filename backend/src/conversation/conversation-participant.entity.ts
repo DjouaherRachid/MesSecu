@@ -39,4 +39,8 @@ export class ConversationParticipant {
   @ManyToOne(() => User, user => user.conversations, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @Column({ type: 'boolean', default: false })
+  is_favorite: boolean;
+
 }
