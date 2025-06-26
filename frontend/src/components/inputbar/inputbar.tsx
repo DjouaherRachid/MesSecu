@@ -1,32 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './inputbar.css'; 
+import './inputbar.css';
+import { socket } from '../../utils/socket';
 
 interface InputBarProps {
   onInput?: (query: string) => void;
+  conversationId: number;
 }
 
-const InputBar: React.FC<InputBarProps> = ({ onInput }) => {
+const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
   const [query, setQuery] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
     if (onInput) {
-      onInput(query);
+      onInput(trimmed);
     }
-    setQuery(''); 
+
+    socket.emit('send_message', {
+      conversationId,
+      content: trimmed,
+    });
+
+    setQuery('');
   };
 
   const handleInput = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.style.height = 'auto'; // Reset
+    textarea.style.height = 'auto';
     const maxHeight = parseFloat(getComputedStyle(textarea).lineHeight) * 4 + 40;
     textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
   };
 
-  // Ajuster la hauteur à chaque modification
   useEffect(() => {
     handleInput();
   }, [query]);

@@ -76,6 +76,15 @@ async create(conversation: Partial<Conversation>) {
     });
   }
 
+  async getUserConversationIds(userId: number): Promise<number[]> {
+  const participations = await this.cpRepository.find({
+    where: { user_id: userId },
+    relations: ['conversation'],
+  });
+
+  return participations.map(p => p.conversation.conversation_id);
+  }
+
   async findOne(id: number) {
     const conv = await this.conversationRepository.findOne({ where: { conversation_id: id } });
     if (!conv) {

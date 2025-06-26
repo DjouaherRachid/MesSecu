@@ -8,32 +8,31 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
 import { AuthGuard } from '@nestjs/passport';
+import { WsException } from '@nestjs/websockets/errors/ws-exception';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const client: Socket = context.switchToWs().getClient();
-    const authHeader = client.handshake.headers.authorization;
+    const client = context.switchToWs().getClient();
+    const headers = client.handshake.headers;
 
-    console.log('[Guard] Handshake headers:', client.handshake.headers);
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('[Guard] Missing or malformed Authorization header');
-      throw new UnauthorizedException('Missing Authorization header');
+    const tokenWithBearer = headers['authorization'] || headers['auth']; 
+    if (!tokenWithBearer) {
+      throw new WsException('Token manquant dans les headers');
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = tokenWithBearer.replace('Bearer ', '');
+
     try {
       const payload = this.jwtService.verify(token);
-      console.log('[Guard] JWT payload:', payload);
-      // Stocker dans handshake si besoin
-      client.data.user = payload;
+      // Optionnel : attacher l'utilisateur au socket
+      client.user = payload;
+      console.log('[WsJwtGuard] Utilisateur authentifié :', payload);
       return true;
     } catch (err) {
-      console.error('[Guard] JWT verification failed:', err.message);
-      throw new UnauthorizedException('Invalid token');
+      throw new WsException('Token invalide');
     }
   }
 }

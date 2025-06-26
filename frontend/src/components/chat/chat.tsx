@@ -85,7 +85,7 @@ export default function Chat({ conversation }: ChatProps) {
       </div>
 
       <div className="chat-input">
-        <InputBar />
+        <InputBar conversationId={conversation.id}/>
       </div>
     </div>
   );
