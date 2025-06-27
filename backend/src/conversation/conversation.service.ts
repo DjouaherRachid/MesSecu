@@ -101,4 +101,12 @@ async create(conversation: Partial<Conversation>) {
   remove(id: number) {
     return this.conversationRepository.delete(id);
   }
+
+  async isUserInConversation(conversationId: number, userId: number): Promise<boolean> {
+  const participant = await this.cpRepository.findOne({
+    where: { conversation_id: conversationId, user_id: userId },
+  });
+  return !!participant;
+}
+
 }

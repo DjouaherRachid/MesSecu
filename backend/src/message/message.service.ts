@@ -25,6 +25,7 @@ export class MessageService {
   ) {}
 
   async create(message: Partial<Message>) {
+    console.log('Creating message:', message);
     if (!message.content) {
       throw new MessageContentMissingException();
     }

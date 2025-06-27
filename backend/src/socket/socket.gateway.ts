@@ -45,6 +45,8 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       const payload = this.jwtService.verify(token);
       client.data.user = payload;
       console.log('[Gateway] Client connecté avec utilisateur:', payload);
+      this.server.emit('user_connected', payload);
+
     } catch (err) {
       console.warn('[Gateway] Connexion refusée : token invalide');
       client.disconnect(true);
@@ -77,19 +79,57 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     @ConnectedSocket() client: Socket,
   ) {
     const sender = client.data.user;
+    const cleanData = JSON.parse(JSON.stringify(data)); 
+    console.log("[Gateway] sender :", sender);
+    console.log("[Gateway] data :", data, data.conversationId, data.content);
 
-    console.log(`[Gateway] Message reçu de ${sender.username} pour conversation ${data.conversationId}`);
+    if (!sender) {
+      console.warn('[Gateway] Utilisateur non authentifié pour envoyer un message');
+      client.emit('error', { message: 'Non authentifié.' });
+      return;
+    }
 
-    // 1. Sauvegarde du message via MessageService
-    const newMessage = await this.messageService.create({
-      conversation_id: data.conversationId,
-      content: data.content,
-      sender_id: sender.id,
-    });
+    console.log(`[Gateway] Requête de message pour conversation ${data.conversationId} de ${client.data.user.email}`);
 
-    // 2. Émettre aux clients de la room
-    this.server.to(`conversation_${data.conversationId}`).emit('new_message', newMessage);
 
-    return { success: true };
+    try {
+      // ✅ Vérification de la participationc
+      console.log(`[Gateway] Vérification de la participation de l'utilisateur ${sender.sub} à la conversation ${data.conversationId}`);
+      const isParticipant = await this.conversationService.isUserInConversation(  
+        data.conversationId,
+        sender.sub,
+      );
+
+      if (!isParticipant) {
+        console.warn(`[Gateway] Utilisateur ${sender.id} n'est pas participant à la conversation ${data.conversationId}`);
+        client.emit('error', {
+          message: 'Vous ne faites pas partie de cette conversation.',
+        });
+        return;
+      }
+
+      console.log(`[Gateway] Message reçu de ${sender.sub} pour conversation ${data.conversationId}`);
+
+      // ✅ 1. Sauvegarde du message
+      const newMessage = await this.messageService.create({
+        conversation_id: data.conversationId,
+        content: data.content,
+        sender_id: sender.sub,
+      });
+
+      // ✅ 2. Diffusion à la room
+      const room = `conversation_${data.conversationId}`;
+      this.server.to(room).emit('new_message', {
+        conversationId : data.conversationId,
+        message: newMessage,
+      });
+
+      // ✅ 3. Réponse au client
+      return { status: 'ok', message: newMessage };
+    } catch (err) {
+      console.error('[Gateway] Erreur lors de l\'envoi du message :', err);
+      client.emit('error', { message: 'Erreur lors de l\'envoi du message.' });
+    }
   }
+
 }
