@@ -8,6 +8,7 @@ export interface Conversation {
     avatar_url: string;
   };
   last_message: {
+    message_id: number;
     content: string;
     sender_name: string;
     seen: boolean;

@@ -10,6 +10,7 @@ import {
   MessageNotFoundException,
 } from '../exceptions/message.exception';
 import { Conversation } from 'src/conversation/conversation.entity';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class MessageService {
@@ -22,6 +23,9 @@ export class MessageService {
 
     @InjectRepository(Conversation)
     private conversationRepository: Repository<Conversation>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async create(message: Partial<Message>) {
@@ -66,17 +70,32 @@ export class MessageService {
 
   async getMessagesPaginated(userId: number, conversationId: number, before?: string, limit = 20 ) {
 
-      // Vérifier que l'utilisateur est bien membre de la conversation
-  const isParticipant = await this.conversationRepository
+  // Récupérer tous les participants avec leurs users
+  const participants = await this.conversationRepository
     .createQueryBuilder('c')
-    .innerJoin('c.participants', 'p')
+    .innerJoinAndSelect('c.participants', 'p')
+    .innerJoinAndSelect('p.user', 'u') // Assure-toi que la relation est bien configurée
     .where('c.conversation_id = :conversationId', { conversationId })
-    .andWhere('p.user_id = :userId', { userId })
-    .getExists(); 
+    .getOne();
+
+  if (!participants) {
+    throw new NotFoundException('Conversation introuvable');
+  }
+
+  // participants.participants est un tableau des participants
+  const participantUsers = participants.participants;
+
+  // Vérifier si userId est dans les participants
+  const isParticipant = participantUsers.some(p => p.user.user_id === userId);
 
   if (!isParticipant) {
     throw new UnauthorizedException('Vous ne participez pas à cette conversation');
   }
+
+  const userMap = new Map<number, string>();
+  participantUsers.forEach(p => {
+    userMap.set(p.user.user_id, p.user.username);
+  });
 
   const query = this.messageRepository
     .createQueryBuilder('message')
@@ -102,6 +121,7 @@ export class MessageService {
     created_at: message.created_at,
     reads: (message.reads || []).map(read => ({
       user_id: read.user_id,
+      username: userMap.get(read.user_id) || 'Inconnu',
       read_at: read.read_at,
     })),
   }));

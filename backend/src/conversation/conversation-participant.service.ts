@@ -62,6 +62,7 @@ export class ConversationParticipantService {
           avatar_url: user.avatar_url,
         })),
         last_message: {
+          message_id: lastMessage?.message_id || 0,
           content: lastMessage?.content || '',
           sender_id: lastMessage?.sender_id || null,
           seen: isSeen,

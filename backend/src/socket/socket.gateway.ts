@@ -1,3 +1,4 @@
+import { UserService } from './../user/user.service';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -14,6 +15,7 @@ import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { MessageService } from '../message/message.service'; 
 import { ConversationService } from '../conversation/conversation.service'; 
 import { JwtService } from '@nestjs/jwt/dist/jwt.service';
+import { read } from 'fs';
 @UseGuards(WsJwtGuard)
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -54,7 +56,11 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   handleDisconnect(client: Socket) {
+    try {
     console.log('[Gateway] Client déconnecté :', client.id);
+    } catch (err) {
+      console.error('[Gateway] Erreur lors de la déconnexion du client :', err);
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -63,9 +69,13 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     @MessageBody() data: { conversationId: number },
     @ConnectedSocket() client: Socket,
   ) {
+    try {
     client.join(`conversation_${data.conversationId}`);
     console.log(`[Gateway] Client ${client.id} a rejoint la conversation ${data.conversationId}`);
     return { joined: data.conversationId };
+    } catch (err) {
+      throw new Error(`[Gateway] Erreur lors de la tentative de rejoindre la conversation ${data.conversationId}: ${err.message}`);
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -79,9 +89,6 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     @ConnectedSocket() client: Socket,
   ) {
     const sender = client.data.user;
-    const cleanData = JSON.parse(JSON.stringify(data)); 
-    console.log("[Gateway] sender :", sender);
-    console.log("[Gateway] data :", data, data.conversationId, data.content);
 
     if (!sender) {
       console.warn('[Gateway] Utilisateur non authentifié pour envoyer un message');
@@ -107,8 +114,6 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         });
         return;
       }
-
-      console.log(`[Gateway] Message reçu de ${sender.sub} pour conversation ${data.conversationId}`);
 
       // ✅ 1. Sauvegarde du message
       const newMessage = await this.messageService.create({
@@ -147,6 +152,46 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       console.error('[Gateway] Erreur lors de l\'envoi du message :', err);
       client.emit('error', { message: 'Erreur lors de l\'envoi du message.' });
     }
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('message_read')
+  async handleMessageRead(
+    @MessageBody() data: { messageId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const user = client.data.user;
+      const { messageId } = data;
+
+      console.log(`[Gateway] Utilisateur ${user.sub} a lu le message ${messageId}`);
+
+      // Récupérer la conversation via le message
+      const message = await this.messageService.findById(messageId);
+      if (!message) {
+        console.warn(`[Gateway] Message ${messageId} introuvable`);
+        return;
+      }
+
+      // Marquer comme lu en base
+      await this.messageService.markAsRead(messageId, user.sub);
+
+      const conversationId = message.conversation_id;
+      // Informer les autres participants
+      const room = `conversation_${conversationId}`;
+      this.server.to(room).emit('message_read', {
+        messageId,
+        conversationId,
+        readerId: user.sub,
+        readerName: user.username,
+        readAt: new Date().toISOString(),
+      });
+
+      return { status: 'ok' };
+    } catch (err) {
+    console.error('[Gateway] Erreur après le log:', err);
+  }
+
   }
 
 }

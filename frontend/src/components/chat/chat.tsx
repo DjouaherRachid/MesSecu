@@ -20,41 +20,60 @@ export default function Chat({ conversation }: ChatProps) {
   const userId = parseInt(Cookies.get('userId') as string, 10); 
   const socket = useSocket();
 
-  useEffect(() => {
-    const loadMessages = async () => {
-      try {
-        console.log('conversationId:', conversation.id);
-        const data = await fetchMessages(Number(conversation.id));
-        console.log('Messages:', data);
-        setMessages(data);
-        console.log('Messages chargés avec succès');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (conversation.id) {
-      loadMessages();
-    }
-  }, [conversation.id]);
-
-  useEffect(() => {
-      if (!socket) return;
-
-      // Ecoute des nouveaux messages
-      const handleNewMessage = (data: { conversationId: number; message: Message }) => {
-        if (data.conversationId === conversation.id) {
-          setMessages(prev => [...prev, data.message]);
+    useEffect(() => {
+      const loadMessages = async () => {
+        try {
+          console.log('conversationId:', conversation.id);
+          const data = await fetchMessages(Number(conversation.id));
+          console.log('Messages:', data);
+          setMessages(data);
+          console.log('Messages chargés avec succès');
+        } finally {
+          setLoading(false);
         }
       };
 
-      socket.on('new_message', handleNewMessage);
+      if (conversation.id) {
+        loadMessages();
+      }
+    }, [conversation.id]);
 
-      // Nettoyage à la désactivation du composant ou changement de conversation
-      return () => {
-        socket.off('new_message', handleNewMessage);
+  useEffect(() => {
+    if (!socket) return;
+
+    // Nouveau message reçu
+    const handleNewMessage = (data: { conversationId: number; message: Message }) => {
+      if (data.conversationId === conversation.id) {
+        setMessages(prev => [...prev, data.message]);
+      }
+    };
+
+    // Un message a été lu
+    const handleMessageRead = (data: {
+      conversationId: number;
+      messageId: number;
+      readerId: number;
+      readerName: string;
+      readAt: string;
+    }) => {
+      if (data.conversationId !== conversation.id) return;
+      
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.message_id === data.messageId ? { ...msg, seen: true, reads : [...msg.reads, { user_id: data.readerId, user_name: data.readerName, read_at: data.readAt } ] } : msg
+        )
+      );
       };
-    }, [socket, conversation.id]);
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('message_read', handleMessageRead);
+
+    // Nettoyage
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('message_read', handleMessageRead);
+    };
+  }, [socket, conversation.id]);
 
   const usernames  = conversation.other_users ? [conversation.other_users] : []
   const displayName = conversation.name || usernames.map((u) => u.username).join(', ');
@@ -74,14 +93,15 @@ export default function Chat({ conversation }: ChatProps) {
         {error && <p className="error">{error}</p>}
         
         {!loading && !error && messages.map((msg) => (
-          console.log('Message:', msg),
+          console.log('Message:', msg.reads?.some(r => r.user_id !== msg.sender.user_id)),
           <MessageBubble
             key={msg.message_id}
             content={msg.content}
             senderName={msg.sender.name}
             senderAvatar={msg.sender.avatar || 'https://via.placeholder.com/40'}
             time={new Date(msg.created_at).toLocaleTimeString()}
-            seen={msg.reads?.some(r => r.user_id !== msg.sender.user_id)} 
+            seen={msg.reads?.some(r => r.user_id !== msg.sender.user_id)}
+            reads={msg.reads || []}
             isSent={msg.sender.user_id === userId} 
           />
         ))}

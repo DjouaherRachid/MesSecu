@@ -66,6 +66,7 @@ async create(conversation: Partial<Conversation>) {
           avatar_url: user.avatar_url,
         })),
         last_message: {
+          message_id: lastMessage?.message_id || 0,
           content: lastMessage?.content || '',
           sender_id: lastMessage?.sender_id || null,
           sender_name: conv.participants.find(u => u.user_id === lastMessage?.sender_id)?.user.username || '',

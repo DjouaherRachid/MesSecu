@@ -58,7 +58,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
       if (payload?.conversationId && payload.message) {
         const newLastMessage = {
           ...payload.message,
-          sender_name: payload.message.sender?.name || 'Inconnu', // ✅ ajouter ce champ manquant
+          sender_name: payload.message.sender?.name || 'Inconnu', 
         };
 
         setConversations((prev) =>
@@ -89,6 +89,51 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
 
     return () => {
       socket.off('new_message', handleNewMessage);
+    };
+  }, [socket]);
+
+useEffect(() => {
+  if (!socket) return;
+
+  const handleMessageRead = ({ conversationId, messageId } : { conversationId: number; messageId: number }) => {
+    if (!conversationId || !messageId) {
+      console.warn('[message_read] Paramètres manquants:', { conversationId, messageId });
+      return;
+    }    console.log(`Message ${messageId} lu dans la conversation ${conversationId}`);
+    
+    setConversations(prevConvs =>
+      prevConvs.map(conv =>
+        ((conv.id === conversationId) && (messageId === conv.last_message.message_id))
+          ? { 
+              ...conv, 
+              last_message: {
+                ...conv.last_message,
+                seen: true
+              }
+            }
+          : conv
+      )
+    );
+
+    setFavorites(prevConvs =>
+      prevConvs.map(conv =>
+        ((conv.id === conversationId) && (messageId === conv.last_message.message_id))
+          ? { 
+              ...conv, 
+              last_message: {
+                ...conv.last_message,
+                seen: true
+              }
+            }
+          : conv
+      )
+    );
+  };
+
+    socket.on('message_read', handleMessageRead);
+
+    return () => {
+      socket.off('message_read', handleMessageRead);
     };
   }, [socket]);
 

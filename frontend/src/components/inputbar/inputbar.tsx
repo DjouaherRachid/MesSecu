@@ -50,7 +50,7 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
         <textarea
           ref={textareaRef}
           className='input-input'
-          placeholder="Input"
+          placeholder="Ecrivez votre message..."
           required
           value={query}
           onChange={(e) => setQuery(e.target.value)}

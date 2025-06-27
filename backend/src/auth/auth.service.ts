@@ -50,7 +50,7 @@ async register(dto: RegisterUserDto) {
         throw new UnauthorizedException('Mot de passe invalide pour l\'utilisateur');
     } 
 
-    const payload = { sub: user.user_id, email: user.email };
+    const payload = { sub: user.user_id, email: user.email, username: user.username };
     const token = this.jwtService.sign(payload);
 
     return {
