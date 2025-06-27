@@ -24,6 +24,8 @@ const ConversationCard: React.FC<ConversationCardProps> = ({
   const fallbackAvatar = usernames[0]?.avatar_url || '';
   const displayName = name || usernames.map(u => u.username).join(', ');
 
+  console.log("senderName", senderName);
+  console.log("lastMessage", lastMessage);
   return (
     <div className="conversation" onClick={onClick} >
       <img

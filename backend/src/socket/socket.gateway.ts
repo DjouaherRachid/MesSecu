@@ -117,12 +117,29 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         sender_id: sender.sub,
       });
 
+      // Charger les relations nécessaires (ex: sender, reads) pour la diffusion
+      const messageWithRelations = await this.messageService.findById(newMessage.message_id);
+
       // ✅ 2. Diffusion à la room
       const room = `conversation_${data.conversationId}`;
       this.server.to(room).emit('new_message', {
-        conversationId : data.conversationId,
-        message: newMessage,
+        conversationId: data.conversationId,
+        message: {
+          message_id: messageWithRelations.message_id,
+          content: messageWithRelations.content,
+          sender: {
+            user_id: messageWithRelations.sender.user_id,
+            name: messageWithRelations.sender.username,
+            avatar: messageWithRelations.sender.avatar_url || null,
+          },
+          created_at: messageWithRelations.created_at,
+          reads: (messageWithRelations.reads || []).map(read => ({
+            user_id: read.user_id,
+            read_at: read.read_at,
+          })),
+        },
       });
+
 
       // ✅ 3. Réponse au client
       return { status: 'ok', message: newMessage };

@@ -7,6 +7,7 @@ import { fetchMyConversations } from  '../../api/conversations';
 import { fetchFavoriteConversations } from '../../api/conversation-participant'; 
 import Cookies from 'js-cookie';
 import { Conversation } from '../../types/conversation';
+import { useSocket } from '../../context/socket-context';
 
 type LeftSidebarProps = {
   setConversation: (conv: Conversation) => void;
@@ -17,6 +18,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
   const [favorites, setFavorites] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const socket = useSocket();
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -25,6 +27,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
           fetchMyConversations(),
           fetchFavoriteConversations()
         ]);
+
+        // Rejoindre toutes les rooms associées aux conversations
+        if (socket && allConvs) {
+          (allConvs as Conversation[]).forEach((conv: Conversation) => {
+            socket.emit('join_conversation', { conversationId: conv.id });
+            console.log(`Socket joined room conversation_${conv.id}`);
+          });
+        }
 
         setConversations(allConvs as Conversation[]);
         setFavorites(favoriteConvs as Conversation[]);
@@ -38,7 +48,49 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
     };
 
     loadConversations();
-  }, []);
+  }, [socket]);
+
+  // Écoute des nouveaux messages et mise à jour des conversations et favoris
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (payload : any) => {
+      if (payload?.conversationId && payload.message) {
+        const newLastMessage = {
+          ...payload.message,
+          sender_name: payload.message.sender?.name || 'Inconnu', // ✅ ajouter ce champ manquant
+        };
+
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === payload.conversationId
+              ? {
+                  ...conv,
+                  last_message: newLastMessage,
+                }
+              : conv
+          )
+        );
+
+        setFavorites((prev) =>
+          prev.map((conv) =>
+            conv.id === payload.conversationId
+              ? {
+                  ...conv,
+                  last_message: newLastMessage,
+                }
+              : conv
+          )
+        );
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+    };
+  }, [socket]);
 
   if (loading) return <div>Chargement des conversations...</div>;
   if (error) return <div>Erreur : {error}</div>;
@@ -60,7 +112,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
           <ConversationCard
             key={conv.id}
             picture={conv.picture || ''}
-            usernames={conv.other_users ? [conv.other_users] : []}
+            usernames={
+              conv.other_users
+                ? [conv.other_users]
+                : [{ username: 'moi', avatar_url: '' }]
+            }
             name={conv.name || ''}
             updatedAt={new Date(conv.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             lastMessage={conv.last_message.content}
@@ -76,8 +132,18 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
           <ConversationCard
             key={conv.id}
             picture={conv.picture || ''}
-            usernames={conv.other_users ? [conv.other_users] : []}
-            name={conv.name || ''}
+            usernames={
+              conv.other_users
+                ? [conv.other_users]
+                : [{ username: 'moi', avatar_url: '' }]
+            }
+            name={
+              conv.name || 
+              (Array.isArray(conv.other_users) 
+                ? conv.other_users.map(u => u.username).join(', ') 
+                : (conv.other_users?.username || '')
+              )
+            }
             updatedAt={new Date(conv.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             lastMessage={conv.last_message.content}
             senderName={conv.last_message.sender_name}

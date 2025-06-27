@@ -5,25 +5,8 @@ import MessageBubble from '../message-bubble/message-bubble';
 import { fetchMessages } from '../../api/messages';
 import Cookies from 'js-cookie';
 import { Conversation } from '../../types/conversation';
-
-type MessageRead = {
-  user_id: number;
-  read_at: string; 
-};
-
-type Sender = {
-  user_id: number;
-  name: string;
-  avatar: string | null;
-};
-
-type Message = {
-  message_id: number;
-  content: string;
-  sender: Sender;
-  created_at: string;
-  reads: MessageRead[];
-};
+import { useSocket } from '../../context/socket-context';
+import { Message } from '../../types/message';
 
 type ChatProps = {
   conversation: Conversation;
@@ -35,7 +18,8 @@ export default function Chat({ conversation }: ChatProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const userId = parseInt(Cookies.get('userId') as string, 10); 
-  
+  const socket = useSocket();
+
   useEffect(() => {
     const loadMessages = async () => {
       try {
@@ -53,6 +37,24 @@ export default function Chat({ conversation }: ChatProps) {
       loadMessages();
     }
   }, [conversation.id]);
+
+  useEffect(() => {
+      if (!socket) return;
+
+      // Ecoute des nouveaux messages
+      const handleNewMessage = (data: { conversationId: number; message: Message }) => {
+        if (data.conversationId === conversation.id) {
+          setMessages(prev => [...prev, data.message]);
+        }
+      };
+
+      socket.on('new_message', handleNewMessage);
+
+      // Nettoyage à la désactivation du composant ou changement de conversation
+      return () => {
+        socket.off('new_message', handleNewMessage);
+      };
+    }, [socket, conversation.id]);
 
   const usernames  = conversation.other_users ? [conversation.other_users] : []
   const displayName = conversation.name || usernames.map((u) => u.username).join(', ');
@@ -72,14 +74,15 @@ export default function Chat({ conversation }: ChatProps) {
         {error && <p className="error">{error}</p>}
         
         {!loading && !error && messages.map((msg) => (
+          console.log('Message:', msg),
           <MessageBubble
             key={msg.message_id}
             content={msg.content}
             senderName={msg.sender.name}
             senderAvatar={msg.sender.avatar || 'https://via.placeholder.com/40'}
             time={new Date(msg.created_at).toLocaleTimeString()}
-            seen={msg.reads?.some(r => r.user_id !== msg.sender.user_id)} // message vu par d'autres
-            isSent={msg.sender.user_id === userId} // adapte avec ton contexte auth
+            seen={msg.reads?.some(r => r.user_id !== msg.sender.user_id)} 
+            isSent={msg.sender.user_id === userId} 
           />
         ))}
       </div>

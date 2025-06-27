@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './inputbar.css';
-import { socket } from '../../utils/socket';
+import { useSocket } from '../../context/socket-context';
+
 
 interface InputBarProps {
   onInput?: (query: string) => void;
@@ -10,18 +11,20 @@ interface InputBarProps {
 const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
   const [query, setQuery] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const socket = useSocket();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
-    if (!trimmed) return;
+    if (!trimmed || !socket) return;
 
-    if (onInput) {
-      onInput(trimmed);
-    }
+    // Optionnel : callback local pour afficher immédiatement
+    // if (onInput) {
+    //   onInput(trimmed);
+    // }
 
     socket.emit('send_message', {
-      conversationId,
+      conversationId :conversationId,
       content: trimmed,
     });
 
@@ -53,7 +56,9 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
           onChange={(e) => setQuery(e.target.value)}
           rows={1}
         />
-        <div id="input-icon">
+        <div 
+        // id="input-icon"
+        >
           <button type="submit" className='input-button'>
             <div id="input-icon-circle"></div>
             <span></span>

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './styles/index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/auth-context';
 
 const container = document.getElementById('root');
 if (container) {

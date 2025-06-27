@@ -50,6 +50,20 @@ export class MessageService {
     });
   }
 
+  async findById(messageId: number) {
+  const message = await this.messageRepository.findOne({
+    where: { message_id: messageId },
+    relations: ['sender', 'reads', 'conversation'], // ajoute les relations nécessaires ici
+  });
+    
+  if (!message) {
+    throw new MessageNotFoundException(messageId);
+  }
+
+  return message ;
+  }
+
+
   async getMessagesPaginated(userId: number, conversationId: number, before?: string, limit = 20 ) {
 
       // Vérifier que l'utilisateur est bien membre de la conversation
