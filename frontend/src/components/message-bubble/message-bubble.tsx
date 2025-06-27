@@ -1,9 +1,13 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './message-bubble.css';
 import SeenInfoPopup from '../seen-info-popup/seen-info-popup';
 import { MessageRead } from '../../types/message';
+import { useSocket } from '../../context/socket-context';
+import Cookies from 'js-cookie';
 
 interface MessageBubbleProps {
+  messageId: number;
+  conversationId?: number;
   content: string;
   senderName?: string;
   senderAvatar?: string;
@@ -14,6 +18,8 @@ interface MessageBubbleProps {
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
+  conversationId,
+  messageId,
   content,
   senderName,
   senderAvatar,
@@ -22,9 +28,39 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   reads = [],
   isSent,
 }) => {
-  console.log(` message : ${content} reads ?`, reads);
   const [showPopup, setShowPopup] = useState(false);
   const ref = useRef(null);
+  const [hasSentRead, setHasSentRead] = useState(false);
+  const socket = useSocket();
+  const userId = Cookies.get('userId') ? parseInt(Cookies.get('userId') as string, 10) : null;
+
+    useEffect(() => {
+    if (!ref.current || hasSentRead) return;
+
+      // Vérifier que l'utilisateur n'a pas déjà "vu" ce message
+      const userHasRead = reads.some(r => r.user_id === userId);
+      if (userHasRead) return; 
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          if (isSent) return; // Optionnel : ne pas marquer comme lu ses propres messages
+          if (!socket) return;
+          socket.emit('message_read', {
+            conversationId,
+            messageId : messageId,
+            readerId: Cookies.get('userId') ? parseInt(Cookies.get('userId') as string, 10) : null,
+          });
+          setHasSentRead(true);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    observer.observe(ref.current);
+
+    return () => observer.disconnect();
+  }, [ref, hasSentRead, messageId, userId, socket, isSent]);
+
   return (
     <div className={`message ${isSent ? 'sent' : 'received'}`}>
       {!isSent && (
@@ -45,7 +81,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         {isSent && <span className="message-time">{time}</span>}
         <div className="relative inline-block" ref={ref}>
         <span
-          className="message-seen text-sm text-gray-500 cursor-pointer"
+          className="message-seen"
           onMouseEnter={() => setShowPopup(true)}
         >
           {seen ? '✔ Vu' : ''}

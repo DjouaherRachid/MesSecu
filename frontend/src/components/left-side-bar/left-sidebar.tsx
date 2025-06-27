@@ -38,8 +38,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
 
         setConversations(allConvs as Conversation[]);
         setFavorites(favoriteConvs as Conversation[]);
-        console.log('Conversations:', allConvs);
-        console.log('Favorite Conversations:', favoriteConvs);
       } catch (err: any) {
         // setError(err.message || 'Erreur inconnue');
       } finally {

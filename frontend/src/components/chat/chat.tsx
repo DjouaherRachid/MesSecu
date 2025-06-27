@@ -23,11 +23,8 @@ export default function Chat({ conversation }: ChatProps) {
     useEffect(() => {
       const loadMessages = async () => {
         try {
-          console.log('conversationId:', conversation.id);
           const data = await fetchMessages(Number(conversation.id));
-          console.log('Messages:', data);
           setMessages(data);
-          console.log('Messages chargés avec succès');
         } finally {
           setLoading(false);
         }
@@ -60,7 +57,7 @@ export default function Chat({ conversation }: ChatProps) {
       
       setMessages(prev =>
         prev.map(msg =>
-          msg.message_id === data.messageId ? { ...msg, seen: true, reads : [...msg.reads, { user_id: data.readerId, user_name: data.readerName, read_at: data.readAt } ] } : msg
+          msg.message_id === data.messageId ? { ...msg, seen: true, reads : [...msg.reads, { user_id: data.readerId, username: data.readerName, read_at: data.readAt } ] } : msg
         )
       );
       };
@@ -96,14 +93,15 @@ export default function Chat({ conversation }: ChatProps) {
           console.log('Message:', msg.reads?.some(r => r.user_id !== msg.sender.user_id)),
           <MessageBubble
             key={msg.message_id}
+            messageId={msg.message_id}
+            conversationId={conversation.id}
             content={msg.content}
             senderName={msg.sender.name}
             senderAvatar={msg.sender.avatar || 'https://via.placeholder.com/40'}
             time={new Date(msg.created_at).toLocaleTimeString()}
             seen={msg.reads?.some(r => r.user_id !== msg.sender.user_id)}
             reads={msg.reads || []}
-            isSent={msg.sender.user_id === userId} 
-          />
+            isSent={msg.sender.user_id === userId}           />
         ))}
       </div>
 

@@ -145,7 +145,6 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         },
       });
 
-
       // ✅ 3. Réponse au client
       return { status: 'ok', message: newMessage };
     } catch (err) {
