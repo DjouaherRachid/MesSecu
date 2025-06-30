@@ -47,10 +47,7 @@ const CreateConversationModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   }, [socket, isOpen]);
 
   const handleCreateConversation = async () => {
-    if (!conversationName.trim()) {
-      setError("Le nom de la conversation est obligatoire.");
-      return;
-    }
+
     if (selectedContacts.length === 0) {
       setError("Sélectionnez au moins un contact.");
       return;

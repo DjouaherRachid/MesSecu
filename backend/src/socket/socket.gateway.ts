@@ -9,7 +9,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { UseGuards, Inject } from '@nestjs/common';
+import { UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { MessageService } from '../message/message.service'; 
@@ -26,6 +26,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   constructor(
     private readonly messageService: MessageService,
+    @Inject(forwardRef(() => ConversationService))
     private readonly conversationService: ConversationService,
     private readonly jwtService: JwtService,
   ) {}
@@ -47,6 +48,12 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       const payload = this.jwtService.verify(token);
       client.data.user = payload;
       console.log('[Gateway] Client connecté avec utilisateur:', payload);
+
+      // Le client rejoint une room spécifique à l'utilisateur
+      const userRoom = `user_${payload.sub}`;
+      client.join(userRoom);
+      console.log(`[Gateway] Client ${client.id} a rejoint la room utilisateur ${userRoom}`);
+
       this.server.emit('user_connected', payload);
 
     } catch (err) {
