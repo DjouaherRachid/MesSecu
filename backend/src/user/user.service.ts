@@ -12,12 +12,15 @@ import {
   EmailAlreadyExistsException,
   UserNotFoundException,
 } from '../exceptions/user.exception';
+import { ConversationParticipant } from 'src/conversation/conversation-participant.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(ConversationParticipant)
+    private cpRepository: Repository<ConversationParticipant>,
   ) {}
 
   async create(user: Partial<User>) {
@@ -54,6 +57,35 @@ export class UserService {
   async findByEmail(email: string) {
     return this.userRepository.findOne({ where: { email } });
   }
+
+async findMyContacts(userId: number): Promise<User[]> {
+  try {
+    const participations = await this.cpRepository.find({
+      where: { user_id: userId },
+      relations: [
+        'conversation',
+        'conversation.participants',
+        'conversation.participants.user',
+      ],
+    });
+
+    const contactMap = new Map<number, User>();
+
+    for (const participation of participations) {
+      for (const otherParticipant of participation.conversation.participants) {
+        const otherUser = otherParticipant.user;
+        if (otherUser.user_id !== userId && !contactMap.has(otherUser.user_id)) {
+          contactMap.set(otherUser.user_id, otherUser);
+        }
+      }
+    }
+
+    return Array.from(contactMap.values());
+  } catch (error) {
+    console.error('[UserService] Erreur lors de la récupération des contacts :', error);
+    throw new InternalServerErrorException('Erreur lors de la récupération des contacts.');
+  }
+}
 
   async update(id: number, updateData: Partial<User>) {
     const user = await this.findOne(id); // délégué à findOne pour l'exception si non trouvé

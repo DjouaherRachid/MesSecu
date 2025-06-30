@@ -1,14 +1,21 @@
 import instance from "../utils/config";
 
 export const toggleFavoriteConversation = async (participantId: number, isFavorite: boolean) => {
-  const res = await instance.put(`/participants/${participantId}/favorite`, {
-    isFavorite,
-  });
-
-  return res.data;
+  try {
+    const res = await instance.put(`/participants/${participantId}/favorite`, { isFavorite });
+    return res.data;
+  } catch (error) {
+    console.error("Erreur lors du toggle favori :", error);
+    throw error;
+  }
 };
 
 export const fetchFavoriteConversations = async () => {
-  const res = await instance.get('/participants/favorites/me');
-  return res.data;
+  try {
+    const res = await instance.get('/participants/favorites/me');
+    return res.data;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des favoris :", error);
+    throw error;
+  }
 };

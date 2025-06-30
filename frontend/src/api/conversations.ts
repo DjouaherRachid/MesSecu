@@ -1,25 +1,54 @@
 import instance from "../utils/config";
 
-export const fetchMyConversations = async () => {
-  const res = await instance.get('/conversations/me');
+export const createConversation = async (
+  name: string,
+  participants: number[],
+  picture_url?: string
+) => {
+  try {
+    const payload = {
+      name,
+      participants,
+      ...(picture_url ? { picture_url } : {}),
+    };
 
-
-  if (res.status < 200 || res.status >= 300) {
-    throw new Error(`Erreur API: ${res.status}`);
+    const res = await instance.post('/conversations', payload);
+    return res.data;
+  } catch (error) {
+    console.error("Erreur lors de la création de la conversation :", error);
+    throw error;
   }
+};
 
-  const data = res.data;
+export const fetchMyConversations = async () => {
+  try {
+    const res = await instance.get('/conversations/me');
 
-  // Suppression de doublons par ID si nécessaire
-  return Array.from(new Map(data.map((c: { id: number; }) => [c.id, c])).values());
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error(`Erreur API: ${res.status}`);
+    }
+
+    const data = res.data;
+
+    // Suppression de doublons par ID si nécessaire
+    return Array.from(new Map(data.map((c: { id: number }) => [c.id, c])).values());
+  } catch (error) {
+    console.error("Erreur lors de la récupération des conversations :", error);
+    throw error;
+  }
 };
 
 export const fetchConversationById = async (conversationId: number) => {
-  const res = await instance.get(`/conversations/${conversationId}`);
+  try {
+    const res = await instance.get(`/conversations/${conversationId}`);
 
-  if (res.status < 200 || res.status >= 300) {
-    throw new Error(`Erreur API: ${res.status}`);
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error(`Erreur API: ${res.status}`);
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error(`Erreur lors de la récupération de la conversation ${conversationId} :`, error);
+    throw error;
   }
-
-  return res.data;
-}
+};

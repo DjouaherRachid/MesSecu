@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, ParseIntPipe, ForbiddenException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { JwtAuthGuard } from '../auth/guards/ws-jwt.guard';
@@ -29,6 +29,12 @@ export class UserController {
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.userService.findOne(id);
+  }
+
+  @Get('me/contacts')
+  @UseGuards(JwtAuthGuard)
+  async getMyContacts(@Req() req: Request & { user: any }) {
+    return this.userService.findMyContacts(req.user.user_id);
   }
 
   @Put(':id')

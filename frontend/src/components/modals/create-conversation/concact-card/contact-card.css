@@ -1,0 +1,39 @@
+.contact-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.contact-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+  padding: 8px 0;
+}
+
+.contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.contact-info {
+  flex-grow: 1;
+  margin-left: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-info strong {
+  font-weight: bold;
+}
+
+.contact-info em {
+  font-style: italic;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.contact-checkbox {
+  margin-left: 10px;
+}

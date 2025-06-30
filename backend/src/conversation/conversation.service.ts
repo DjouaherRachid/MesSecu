@@ -1,9 +1,11 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from './conversation.entity';
 import { ConversationNotFoundException } from '../exceptions/conversation.exception';
-import { ConversationParticipant } from './conversation-participant.entity';
+import { ConversationParticipant, UserRole } from './conversation-participant.entity';
+import { User } from 'src/user/user.entity';
+import { CreateConversationDto } from 'src/auth/dto/conversation-dto';
 
 @Injectable()
 export class ConversationService {
@@ -13,22 +15,54 @@ export class ConversationService {
 
     @InjectRepository(ConversationParticipant)
     private cpRepository: Repository<ConversationParticipant>, 
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>, 
+
   ) {}
 
-async create(conversation: Partial<Conversation>) {
-  try {
-    const savedConversation = await this.conversationRepository.save(conversation);
+  async create(conversationDto: CreateConversationDto, creatorUserId: number) {
+    const { name, picture_url, participants } = conversationDto;
+
+    if (!participants || !Array.isArray(participants) || participants.length === 0) {
+      throw new BadRequestException('La liste des participants est obligatoire et ne peut pas être vide.');
+    }
+
+    console.log('[ConversationService] userCreatorId:', creatorUserId);
+    // Ajouter le créateur dans participants s'il n'y est pas déjà
+    const participantsWithCreator = participants.includes(creatorUserId)
+      ? participants
+      : [...participants, creatorUserId];
+
+    console.log('[ConversationService] Création de la conversation avec les participants:', participantsWithCreator);
+
+    // Création de la conversation
+    const savedConversation = await this.conversationRepository.save({
+      name,
+      picture_url,
+    });
+
+    // Préparation des participants avec le rôle
+    const participantEntities = participantsWithCreator.map(userId => {
+      const role = userId === creatorUserId ? UserRole.ADMIN : UserRole.MEMBER;
+      return this.cpRepository.create({
+        user: { user_id: userId },
+        conversation: { conversation_id: savedConversation.conversation_id },
+        role,
+      });
+    });
+
+    // Sauvegarde des participants
+    try {
+      await this.cpRepository.save(participantEntities);
+    } catch (err) {
+      console.error('[create] erreur lors de la sauvegarde des participants:', err);
+      throw err;
+    }
+
     return savedConversation;
-  } catch (error) {
-    console.error('[ConversationService] Erreur lors de la création :', error);
-    throw new InternalServerErrorException('Erreur lors de la création de la conversation.');
   }
-}
-
-  findAll() {
-    return this.conversationRepository.find();
-  }
-
+  
   async findByUser(userId: number) {
     const participations = await this.cpRepository.find({
       where: { user_id: userId },
@@ -84,6 +118,10 @@ async create(conversation: Partial<Conversation>) {
   });
 
   return participations.map(p => p.conversation.conversation_id);
+  }
+
+  async findAll() {
+    return await this.conversationRepository.find();
   }
 
   async findOne(id: number) {

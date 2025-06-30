@@ -2,14 +2,18 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req } from 
 import { ConversationService } from './conversation.service';
 import { Conversation } from './conversation.entity';
 import { JwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
+import { CreateConversationDto } from 'src/auth/dto/conversation-dto';
 
 @Controller('conversations')
 export class ConversationController {
   constructor(private readonly conversationService: ConversationService) {}
 
   @Post()
-  create(@Body() conversation: Partial<Conversation>) {
-    return this.conversationService.create(conversation);
+  @UseGuards(JwtAuthGuard)
+  create(@Body() conversationDto: CreateConversationDto, @Req() req) {
+    const creatorUserId = req.user.sub;
+    console.log('[ConversationController] req.user:',req.user);
+    return this.conversationService.create(conversationDto, creatorUserId);
   }
 
   @UseGuards(JwtAuthGuard)

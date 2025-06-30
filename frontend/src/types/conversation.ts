@@ -2,7 +2,7 @@ export interface Conversation {
   id: number;
   name: string;
   picture?: string | null;
-  updatedAt: string;
+  updated_at: string;
   other_users: {
     username: string;
     avatar_url: string;

@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import './left-sidebar.css';
 import SearchBar from '../searchbar/searchbar';
 import ConversationCard from '../conversation-card/conversation-card';
 import { fetchMyConversations } from  '../../api/conversations';
 import { fetchFavoriteConversations } from '../../api/conversation-participant'; 
-import Cookies from 'js-cookie';
 import { Conversation } from '../../types/conversation';
 import { useSocket } from '../../context/socket-context';
 
 type LeftSidebarProps = {
   setConversation: (conv: Conversation) => void;
+  addButtonAction?: () => void;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAction }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [favorites, setFavorites] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const socket = useSocket();
 
   useEffect(() => {
@@ -31,6 +30,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation }) => {
         // Rejoindre toutes les rooms associées aux conversations
         if (socket && allConvs) {
           (allConvs as Conversation[]).forEach((conv: Conversation) => {
+            console.log(`this conv is, ${conv.last_message}, ${conv.name},${conv.updated_at}`);
             socket.emit('join_conversation', { conversationId: conv.id });
             console.log(`Socket joined room conversation_${conv.id}`);
           });
@@ -143,13 +143,13 @@ useEffect(() => {
       <div className="sidebar-header">
         <h1>Chats</h1>
         <div id="add-icon">
-          <button type="submit" className="add-button">
+          <button type="submit" className="add-button" onClick={() => { addButtonAction && addButtonAction(); }}>
             <span>+</span>
           </button>
         </div>
       </div>
       <SearchBar onSearch={() => {}} />
-      <h2>Favoris :</h2>
+      {/* <h2>Favoris :</h2> */}
       <ul className="vertical ex">
         {favorites.map((conv) => (
           <ConversationCard
@@ -161,7 +161,13 @@ useEffect(() => {
                 : [{ username: 'moi', avatar_url: '' }]
             }
             name={conv.name || ''}
-            updatedAt={new Date(conv.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            updatedAt={
+              new Date(
+                conv.last_message && conv.last_message.message_id !== 0
+                  ? conv.last_message.created_at
+                  : conv.updated_at
+              ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
             lastMessage={conv.last_message.content}
             isSeen={conv.last_message.seen}
             senderName={conv.last_message.sender_name}
@@ -187,7 +193,13 @@ useEffect(() => {
                 : (conv.other_users?.username || '')
               )
             }
-            updatedAt={new Date(conv.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            updatedAt={
+              new Date(
+                conv.last_message && conv.last_message.message_id !== 0
+                  ? conv.last_message.created_at
+                  : conv.updated_at
+              ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
             lastMessage={conv.last_message.content}
             senderName={conv.last_message.sender_name}
             isSeen={conv.last_message.seen}
