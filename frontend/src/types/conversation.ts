@@ -4,6 +4,7 @@ export interface Conversation {
   picture?: string | null;
   updated_at: string;
   other_users: {
+    user_id: number;
     username: string;
     avatar_url: string;
   };

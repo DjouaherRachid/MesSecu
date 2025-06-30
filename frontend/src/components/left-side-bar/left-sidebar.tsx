@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './left-sidebar.css';
 import SearchBar from '../searchbar/searchbar';
 import ConversationCard from '../conversation-card/conversation-card';
@@ -18,6 +18,20 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const socket = useSocket();
+
+    const sortedConversations = useMemo(() => {
+    return [...conversations].sort((a, b) => {
+      const dateA = a.last_message && a.last_message.message_id !== 0
+        ? new Date(a.last_message.created_at).getTime()
+        : new Date(a.updated_at).getTime();
+
+      const dateB = b.last_message && b.last_message.message_id !== 0
+        ? new Date(b.last_message.created_at).getTime()
+        : new Date(b.updated_at).getTime();
+
+      return dateB - dateA; // tri décroissant
+    });
+  }, [conversations]);
 
   useEffect(() => {
     if (!socket) return;
@@ -177,7 +191,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
 
       <h2>Conversations :</h2>
       <ul className="vertical ex">
-        {conversations.map((conv) => (
+        {sortedConversations.map((conv) => (
           <ConversationCard
             key={conv.id}
             picture={conv.picture || ''}

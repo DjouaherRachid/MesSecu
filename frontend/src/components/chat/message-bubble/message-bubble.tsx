@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './message-bubble.css';
-import SeenInfoPopup from '../seen-info-popup/seen-info-popup';
-import { MessageRead } from '../../types/message';
-import { useSocket } from '../../context/socket-context';
+import SeenInfoPopup from '../../seen-info-popup/seen-info-popup';
+import { MessageRead } from '../../../types/message';
+import { useSocket } from '../../../context/socket-context';
 import Cookies from 'js-cookie';
 
 interface MessageBubbleProps {

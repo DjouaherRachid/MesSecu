@@ -60,6 +60,7 @@ export class ConversationService {
     name: conv.name || '',
     updated_at: conv.updated_at,
     other_users: otherUsers.map(user => ({
+      user_id: user.user_id,
       username: user.username,
       avatar_url: user.avatar_url,
     })),
@@ -170,6 +171,7 @@ export class ConversationService {
         name: conv.name || '',
         updated_at: conv.updated_at,
         other_users: otherUsers.map(user => ({
+          user_id: user.user_id,
           username: user.username,
           avatar_url: user.avatar_url,
         })),

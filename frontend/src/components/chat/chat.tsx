@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import InputBar from '../inputbar/inputbar';
 import './chat.css';
-import MessageBubble from '../message-bubble/message-bubble';
+import MessageBubble from './message-bubble/message-bubble';
 import { fetchMessages } from '../../api/messages';
 import Cookies from 'js-cookie';
 import { Conversation } from '../../types/conversation';
 import { useSocket } from '../../context/socket-context';
 import { Message } from '../../types/message';
+import  Typing  from './typing/typing';
+import { Socket } from 'socket.io-client';
 
 type ChatProps = {
   conversation: Conversation;
 };
-
 
 export default function Chat({ conversation }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]); 
@@ -19,6 +20,15 @@ export default function Chat({ conversation }: ChatProps) {
   const [error, setError] = useState('');
   const userId = parseInt(Cookies.get('userId') as string, 10); 
   const socket = useSocket();
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState<{ name: string; avatar: string } | null>(null);
+  const usernames  = conversation.other_users ? [conversation.other_users] : []
+  const displayName = conversation.name || usernames.map((u) => u.username).join(', ');
+  const otherUsers = Array.isArray(conversation.other_users)
+  ? conversation.other_users
+  : [conversation.other_users]; 
+
+  console.log('otherUsers:', otherUsers);
 
     useEffect(() => {
       const loadMessages = async () => {
@@ -61,19 +71,40 @@ export default function Chat({ conversation }: ChatProps) {
         )
       );
       };
+    
+    const handleUserTyping = (data: { userId: number; conversationId: number }) => {
+      console.log('user_typing:', data);
+      if (data.conversationId === conversation.id) {
+        setIsTyping(true);
+      }
+      const user = otherUsers.find(u => u.user_id === data.userId);
+      console.log('User found:', user);
+      if (user) {
+        setTypingUser({ name: user.username, avatar: user.avatar_url });
+      }
+
+    };
+
+    const handleUserStoppingTyping = (data: { conversationId: number }) => {
+      console.log('User stopped typing:', data);
+      if (data.conversationId === conversation.id) {
+        setIsTyping(false);
+      }
+    };
 
     socket.on('new_message', handleNewMessage);
     socket.on('message_read', handleMessageRead);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('user_stop_typing', handleUserStoppingTyping);
 
     // Nettoyage
     return () => {
       socket.off('new_message', handleNewMessage);
       socket.off('message_read', handleMessageRead);
+      socket.off('user_typing', handleUserTyping);
+      socket.off('user_stop_typing', handleUserStoppingTyping);
     };
   }, [socket, conversation.id]);
-
-  const usernames  = conversation.other_users ? [conversation.other_users] : []
-  const displayName = conversation.name || usernames.map((u) => u.username).join(', ');
 
   return (
     <div className="chat-container">
@@ -103,8 +134,8 @@ export default function Chat({ conversation }: ChatProps) {
             reads={msg.reads || []}
             isSent={msg.sender.user_id === userId}           />
         ))}
+              { isTyping ? Typing(typingUser?.avatar || 'https://via.placeholder.com/40', typingUser?.name || 'Typing...') : null }
       </div>
-
       <div className="chat-input">
         <InputBar conversationId={conversation.id}/>
       </div>

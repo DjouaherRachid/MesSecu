@@ -197,7 +197,27 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     } catch (err) {
     console.error('[Gateway] Erreur après le log:', err);
   }
-
   }
 
+  @SubscribeMessage('user_typing')
+  handleUserTyping(client: Socket, payload: { conversationId: number }) {
+    const user = client.data.user;
+    console.log(`[Gateway] Utilisateur ${user.sub} a arrêté de taper dans la conversation ${payload.conversationId}`);
+    const { conversationId } = payload;
+    // Diffuser à tous les participants sauf l’émetteur
+    client.to(`conversation_${conversationId}`).emit('user_typing', {
+      userId: user.sub,
+      conversationId,
+    });
+  }
+
+  @SubscribeMessage('user_stop_typing')
+  handleUserStopTyping(client: Socket, payload: { conversationId: number }) {
+    console.log(`[Gateway] Utilisateur ${client.data.sub} a arrêté de taper dans la conversation ${payload.conversationId}`);
+    const { conversationId } = payload;
+    client.to(`conversation_${conversationId}`).emit('user_stop_typing', {
+      userId: client.data.userId,
+      conversationId,
+    });
+  }
 }

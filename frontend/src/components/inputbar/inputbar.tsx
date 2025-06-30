@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './inputbar.css';
 import { useSocket } from '../../context/socket-context';
+import Cookies from 'js-cookie';
 
 
 interface InputBarProps {
@@ -12,16 +13,12 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
   const [query, setQuery] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const socket = useSocket();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
     if (!trimmed || !socket) return;
-
-    // Optionnel : callback local pour afficher immédiatement
-    // if (onInput) {
-    //   onInput(trimmed);
-    // }
 
     socket.emit('send_message', {
       conversationId :conversationId,
@@ -38,11 +35,33 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
     textarea.style.height = 'auto';
     const maxHeight = parseFloat(getComputedStyle(textarea).lineHeight) * 4 + 40;
     textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+
+    // Émettre "typing" quand on commence à écrire
+    if (!socket) return;
+      console.log('[InputBar] Emission de l\'événement "user_typing"');
+      socket.emit('user_typing', { conversationId :conversationId});
+
+    // Clear et reset un timeout pour envoyer "stop_typing"
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('user_stop_typing', { conversationId :conversationId});
+    }, 2000); // 2 sec sans taper = arrêt de la saisie
   };
 
   useEffect(() => {
     handleInput();
   }, [query]);
+
+
+    const onKeyPressHandler = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      handleSubmit(e);
+      e.preventDefault();
+    }
+  }
 
   return (
     <form className='input-form' onSubmit={handleSubmit}>
@@ -54,6 +73,7 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
           required
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyPress={onKeyPressHandler}
           rows={1}
         />
         <div 
