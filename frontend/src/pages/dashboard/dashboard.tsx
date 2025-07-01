@@ -7,6 +7,7 @@ import CreateConversationModal from '../../components/modals/create-conversation
 
 const Dashboard = () => {
     const [conversation, setConversation] = useState([] as unknown as Conversation);
+    console.log('Dashboard conversation:', conversation);
     const [showCreateConversationModal, setShowCreateConversationModal] = useState(false);
 
     useEffect(() => {
@@ -17,8 +18,18 @@ const Dashboard = () => {
         <div className="animated-background">
         {showCreateConversationModal && <CreateConversationModal isOpen={showCreateConversationModal} onClose={function (): void {setShowCreateConversationModal(false) } }/>}
         <div className='dashboard-container'>
-            <LeftSidebar setConversation={setConversation} addButtonAction={function (): void {setShowCreateConversationModal(true)}}/>
-            <Chat conversation={conversation}/>
+            <LeftSidebar
+                setConversation={setConversation}
+                addButtonAction={() => setShowCreateConversationModal(true)}
+            />
+            {conversation && conversation.id ? (
+                <Chat conversation={conversation}/>
+            ) : (
+            <div className="title-container">
+                <h1 className="title"> Bienvenue sur Mes-Secu</h1>
+                <p>Veuillez sélectionner une conversation pour commencer à discuter.</p>
+            </div>
+            )}
         </div>
 
         <div>
