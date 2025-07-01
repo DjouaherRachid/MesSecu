@@ -17,10 +17,26 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
   const [favorites, setFavorites] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const socket = useSocket();
 
+  const filteredConversations = useMemo(() => {
+    const lower = searchTerm;
+
+    console.log('Filtering conversations with search term:', lower);
+
+    return conversations.filter(conv => {
+      const nameMatch = conv.name?.toLowerCase().includes(lower);
+      const otherUsersMatch = Array.isArray(conv.other_users)
+        ? conv.other_users.some(u => u.username.toLowerCase().includes(lower))
+        : conv.other_users?.username.toLowerCase().includes(lower);
+
+      return nameMatch || otherUsersMatch;
+    });
+  }, [conversations, searchTerm]);
+
     const sortedConversations = useMemo(() => {
-    return [...conversations].sort((a, b) => {
+    return [...filteredConversations].sort((a, b) => {
       const dateA = a.last_message && a.last_message.message_id !== 0
         ? new Date(a.last_message.created_at).getTime()
         : new Date(a.updated_at).getTime();
@@ -31,7 +47,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
 
       return dateB - dateA; // tri décroissant
     });
-  }, [conversations]);
+  }, [conversations, searchTerm]);
 
   useEffect(() => {
     if (!socket) return;
@@ -160,7 +176,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
         </div>
       </div>
 
-      <SearchBar onSearch={() => {}} />
+      <SearchBar onSearch={setSearchTerm} />
 
       {/* Favoris */}
       <ul className="vertical ex">

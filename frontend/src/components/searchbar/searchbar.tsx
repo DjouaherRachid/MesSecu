@@ -25,15 +25,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             placeholder="Search"
             required
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (onSearch) {
+                onSearch(e.target.value);
+              }
+            }}
           />
         </div>
-        <div id="search-icon">
+        {/* <div id="search-icon">
           <button type="submit" className='search-button'>
             <div id="search-icon-circle"></div>
             <span></span>
           </button>
-        </div>
+        </div> */}
       </div>
     </form>
   );
