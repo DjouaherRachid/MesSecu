@@ -4,8 +4,6 @@ CREATE TABLE users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    public_key TEXT NOT NULL,
-    private_key_encrypted TEXT NOT NULL,
     avatar_url VARCHAR(255),
     is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -30,7 +28,7 @@ CREATE TABLE conversation_participants (
     conversation_id INT NOT NULL,
     user_id INT NOT NULL,
     role user_role DEFAULT 'member',
-    is_favorite BOOLEAN DEFAULT false,
+    is_favorite BOOLEAN DEFAULT FALSE,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (conversation_id, user_id),
     FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id) ON DELETE CASCADE,
@@ -52,6 +50,7 @@ CREATE TABLE messages (
     FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- Table: message_reads
 CREATE TABLE message_reads (
     message_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -59,6 +58,44 @@ CREATE TABLE message_reads (
     PRIMARY KEY (message_id, user_id),
     FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Table: one_time_pre_keys
+CREATE TABLE one_time_pre_keys (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    key_id INTEGER NOT NULL,
+    public_key TEXT NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE identity_keys (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    public_key TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE signed_pre_keys (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    key_id INTEGER NOT NULL,
+    public_key TEXT NOT NULL,
+    signature TEXT NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: sessions
+CREATE TABLE sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    peer_id INTEGER NOT NULL,
+    session_data JSONB,
+    created_at TIMESTAMP DEFAULT now(),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (peer_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Trigger function for automatic updated_at
@@ -72,7 +109,7 @@ $$ LANGUAGE plpgsql;
 
 -- Trigger on message update
 CREATE TRIGGER trg_update_timestamp
-BEFORE UPDATE ON messages  
+BEFORE UPDATE ON messages
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_column();
 
@@ -80,3 +117,4 @@ EXECUTE FUNCTION update_modified_column();
 CREATE INDEX idx_user_email ON users(email);
 CREATE INDEX idx_conversation_name ON conversations(name);
 CREATE INDEX idx_message_created_at ON messages(created_at);
+CREATE INDEX idx_signed_pre_keys_user_active ON signed_pre_keys(user_id, active);

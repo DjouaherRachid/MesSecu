@@ -42,6 +42,7 @@
   border: none;
   font-size: 18px;
   cursor: pointer;
+  width: fit-content;
 }
 
 .chat-messages {

@@ -5,10 +5,15 @@ import {
   CreateDateColumn,
   OneToMany,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
 import { Message } from '../message/message.entity';
 import { ConversationParticipant } from '../conversation/conversation-participant.entity';
 import { MessageRead } from '../message/message-read.entity';
+import { OneTimePreKey } from 'src/keys/one-time-pre-key/one-time-pre-key.entity';
+import { Session } from 'src/session/session.entity';
+import { IdentityKey } from 'src/keys/identity-key/identity-key.entity';
+import { SignedPreKey } from 'src/keys/signed-pre-key/signed-pre-key.entity';
 
 @Entity('users')
 export class User {
@@ -24,13 +29,7 @@ export class User {
   @Column()
   password_hash: string;
 
-  @Column('text')
-  public_key: string;
-
-  @Column('text')
-  private_key_encrypted: string;
-
-  @Column('text')
+  @Column('text', { nullable: true })
   avatar_url: string | null;
 
   @Column({ default: false })
@@ -53,4 +52,19 @@ export class User {
 
   @OneToMany(() => MessageRead, messageRead => messageRead.user)
   message_reads: MessageRead[];
+
+  @OneToMany(() => OneTimePreKey, key => key.user)
+  one_time_pre_keys: OneTimePreKey[];
+
+  @OneToMany(() => Session, session => session.user)
+  sessions_initiated: Session[];
+
+  @OneToMany(() => Session, session => session.peer)
+  sessions_received: Session[];
+
+  @OneToOne(() => IdentityKey, identityKey => identityKey.user, { cascade: true })
+  identity_key: IdentityKey;
+
+  @OneToMany(() => SignedPreKey, signedPreKey => signedPreKey.user, { cascade: true })
+  signed_pre_keys: SignedPreKey[];
 }

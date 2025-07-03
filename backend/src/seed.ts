@@ -5,6 +5,9 @@ import { ConversationParticipant } from './conversation/conversation-participant
 import { Message } from './message/message.entity';
 import { MessageRead } from './message/message-read.entity';
 import { UserRole } from './conversation/conversation-participant.entity'; 
+import { IdentityKey } from './keys/identity-key/identity-key.entity';
+import { SignedPreKey } from './keys/signed-pre-key/signed-pre-key.entity';
+import { OneTimePreKey } from './keys/one-time-pre-key/one-time-pre-key.entity';
 
 async function seed() {
   await AppDataSource.initialize();
@@ -15,41 +18,100 @@ async function seed() {
     const participantRepo = AppDataSource.getRepository(ConversationParticipant);
     const messageRepo = AppDataSource.getRepository(Message);
     const messageReadRepo = AppDataSource.getRepository(MessageRead);
+    const oneTimePreKeyRepo = AppDataSource.getRepository(OneTimePreKey); 
+    const identityKeyRepo = AppDataSource.getRepository(IdentityKey);
+    const signedPreKeyRepo = AppDataSource.getRepository(SignedPreKey);
 
-    // Seed users
-    // const alice = await userRepo.findOneBy({ username: 'alice' });
-    // if (!alice) {
-      const users = userRepo.create([
-        {
-          username: 'alice',
-          email: 'alice@example.com',
-          password_hash: '$2b$10$oPIIEIx2e1xsuAJugEuCLezKonnysaRWygGCJFZXER7iqh/TIIISe',
-          public_key: 'alice_pub_key',
-          private_key_encrypted: 'alice_priv_enc',
-          avatar_url: 'https://example.com/avatar1.png',
-        },
-        {
-          username: 'bob',
-          email: 'bob@example.com',
-          password_hash: 'hashed_pw2',
-          public_key: 'bob_pub_key',
-          private_key_encrypted: 'bob_priv_enc',
-          avatar_url: 'https://example.com/avatar2.png',
-        },
-        {
-          username: 'charlie',
-          email: 'charlie@example.com',
-          password_hash: 'hashed_pw3',
-          public_key: 'charlie_pub_key',
-          private_key_encrypted: 'charlie_priv_enc',
-          avatar_url: 'https://example.com/avatar3.png',
-        },
-      ]);
+    const users = userRepo.create([
+    {
+      username: 'alice',
+      email: 'alice@example.com',
+      password_hash: '$2b$10$oPIIEIx2e1xsuAJugEuCLezKonnysaRWygGCJFZXER7iqh/TIIISe',
+      avatar_url: 'https://example.com/avatar1.png',
+    },
+    {
+      username: 'bob',
+      email: 'bob@example.com',
+      password_hash: 'hashed_pw2',
+      avatar_url: 'https://example.com/avatar2.png',
+    },
+    {
+      username: 'charlie',
+      email: 'charlie@example.com',
+      password_hash: 'hashed_pw3',
+      avatar_url: 'https://example.com/avatar3.png',
+    },
+    ]);
       await userRepo.save(users);
       console.log('✅ Users seeded');
-    // } else {
-    //   console.log('⏩ Users already exist, skipping');
-    // }
+
+  // Identity Keys (pas de key_id, OneToOne avec User)
+  const identityKeys = identityKeyRepo.create([
+    {
+      user: users[0],
+      public_key: 'alice-identity-public-key',
+    },
+    {
+      user: users[1],
+      public_key: 'bob-identity-public-key',
+    },
+    {
+      user: users[2],
+      public_key: 'charlie-identity-public-key',
+    },
+  ]);
+  await identityKeyRepo.save(identityKeys);
+  console.log('✅ Identity keys seeded');
+
+
+  // Signed Pre-Keys (ManyToOne, avec key_id, public_key, signature)
+  const signedPreKeys = signedPreKeyRepo.create([
+    {
+      user: users[0],
+      key_id: 1,
+      public_key: 'alice-signed-pre-key-public-key',
+      signature: 'alice-signature',
+    },
+    {
+      user: users[1],
+      key_id: 2,
+      public_key: 'bob-signed-pre-key-public-key',
+      signature: 'bob-signature',
+    },
+    {
+      user: users[2],
+      key_id: 3,
+      public_key: 'charlie-signed-pre-key-public-key',
+      signature: 'charlie-signature',
+    },
+  ]);
+  await signedPreKeyRepo.save(signedPreKeys);
+  console.log('✅ Signed pre-keys seeded');
+
+
+  // One-Time Pre-Keys (ManyToOne, avec key_id, public_key, used)
+  const oneTimePreKeys = oneTimePreKeyRepo.create([
+    {
+      user: users[0],
+      key_id: 101,
+      public_key: 'alice-one-time-pre-key-public-key-1',
+      used: false,
+    },
+    {
+      user: users[1],
+      key_id: 102,
+      public_key: 'bob-one-time-pre-key-public-key-1',
+      used: false,
+    },
+    {
+      user: users[2],
+      key_id: 103,
+      public_key: 'charlie-one-time-pre-key-public-key-1',
+      used: false,
+    },
+  ]);
+  await oneTimePreKeyRepo.save(oneTimePreKeys);
+  console.log('✅ One-time pre-keys seeded');
 
     // Seed conversations
     const convCount = await convRepo.count();
@@ -103,3 +165,4 @@ async function seed() {
 }
 
 seed();
+ 

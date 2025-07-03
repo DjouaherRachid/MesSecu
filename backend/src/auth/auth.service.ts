@@ -13,30 +13,31 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-async register(dto: RegisterUserDto) {
-  const emailExists = await this.userService.findByEmail(dto.email);
-  if (emailExists) throw new ConflictException('Email déjà utilisé');
+  async register(dto: RegisterUserDto) {
+    const emailExists = await this.userService.findByEmail(dto.email);
+    if (emailExists) throw new ConflictException('Email déjà utilisé');
 
-  // Générer les clés
-  const { publicKey, privateKey } = await generateRsaKeyPair();
+    // Vérification des champs Signal obligatoires
+    if (
+      !dto.identity_public_key ||
+      !dto.signed_pre_key ||
+      !dto.signed_pre_key_signature
+    ) {
+      throw new ConflictException('Clés Signal manquantes.');
+    }
 
-  // Hasher le mot de passe
-  const hashedPassword = await bcrypt.hash(dto.password, 10);
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-  // Chiffrer la clé privée
-  const encryptedPrivateKey = encryptPrivateKey(privateKey, dto.password);
+    // Créer l'utilisateur
+    const newUser = await this.userService.create({
+      email: dto.email,
+      username: dto.username,
+      password_hash: hashedPassword,
+    });
 
-  // Créer l'utilisateur
-  const newUser = await this.userService.create({
-    email: dto.email,
-    username: dto.username,
-    password_hash: hashedPassword,
-    public_key: publicKey,
-    private_key_encrypted: JSON.stringify(encryptedPrivateKey),
-  });
-
-  return { message: 'Inscription réussie', userId: newUser.user_id };
-}
+    return { message: 'Inscription réussie', userId: newUser.user_id };
+  }
 
   async login(dto: LoginUserDto) {
     const user = await this.userService.findByEmail(dto.email);

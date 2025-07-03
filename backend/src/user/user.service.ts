@@ -109,4 +109,8 @@ async findMyContacts(userId: number): Promise<User[]> {
       throw new InternalServerErrorException('Erreur lors de la suppression.');
     }
   }
+
+  async findByUsername(username: string) {
+    return this.userRepository.findOne({ where: { username } });
+  }
 }

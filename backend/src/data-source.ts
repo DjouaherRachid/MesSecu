@@ -2,9 +2,13 @@ import { DataSource } from 'typeorm';
 
 import { User } from './user/user.entity';
 import { Conversation } from './conversation/conversation.entity';
-import { Message } from './message/message.entity'; // Message from './message/message.entity';
+import { Message } from './message/message.entity'; 
 import { ConversationParticipant} from './conversation/conversation-participant.entity';
 import { MessageRead } from './message/message-read.entity';
+import { OneTimePreKey } from './keys/one-time-pre-key/one-time-pre-key.entity';
+import { SignedPreKey } from './keys/signed-pre-key/signed-pre-key.entity';
+import { IdentityKey } from './keys/identity-key/identity-key.entity';
+import { Session } from './session/session.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -22,6 +26,10 @@ export const AppDataSource = new DataSource({
     Message,
     ConversationParticipant,
     MessageRead,
+    OneTimePreKey,
+    SignedPreKey,
+    IdentityKey,
+    Session
   ],
   migrations: ['./migrations/*.ts'],
 });

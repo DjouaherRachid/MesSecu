@@ -1,19 +1,19 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
-    environment:
-      - WATCHPACK_POLLING=true
-    stdin_open: true
-    tty: true
-    env_file:
-      - .env
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - WATCHPACK_POLLING=true
+  #   stdin_open: true
+  #   tty: true
+  #   env_file:
+  #     - .env
 
   backend:
     build: ./backend

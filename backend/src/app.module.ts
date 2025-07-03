@@ -11,6 +11,14 @@ import { ConversationParticipant } from './conversation/conversation-participant
 import { AuthModule } from './auth/auth.module';
 import { SocketModule } from './socket/socket.module';
 import { MessageRead } from './message/message-read.entity';
+import { OneTimePreKey } from './keys/one-time-pre-key/one-time-pre-key.entity';
+import { IdentityKey } from './keys/identity-key/identity-key.entity';
+import { SignedPreKey } from './keys/signed-pre-key/signed-pre-key.entity';
+import { Session } from './session/session.entity';
+import { IdentityKeysModule } from './keys/identity-key/identity-key.module';
+import { OneTimePreKeyModule } from './keys/one-time-pre-key/one-time-pre-key.module';
+import { SignedPreKeysModule } from './keys/signed-pre-key/signed-pre-key.module';
+import { SessionModule } from './session/session.module';
 
 @Module({
   imports: [
@@ -21,7 +29,7 @@ import { MessageRead } from './message/message-read.entity';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [User, Message, Conversation, ConversationParticipant, MessageRead],
+      entities: [User, Message, Conversation, ConversationParticipant, MessageRead, OneTimePreKey, IdentityKey, SignedPreKey, Session],
       synchronize: false,
     }),
     UserModule,
@@ -30,6 +38,10 @@ import { MessageRead } from './message/message-read.entity';
     MessageModule,
     AuthModule,
     SocketModule,
+    IdentityKeysModule,
+    OneTimePreKeyModule,
+    SignedPreKeysModule,
+    SessionModule,
   ],
 })
 export class AppModule {}
