@@ -1,4 +1,4 @@
-import instance from "../utils/instance";
+import instance from "./instance";
 
 export const toggleFavoriteConversation = async (participantId: number, isFavorite: boolean) => {
   try {

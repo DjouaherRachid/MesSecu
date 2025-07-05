@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const config = {
-  backendUrl: process.env.REACT_APP_BACKEND_URL || 'https://localhost:8000', // Default to localhost if not set
+  backendUrl: process.env.REACT_APP_BACKEND_URL, // Default to localhost if not set
 };
 
   console.log('[DEBUG] Backend URL utilisée :', config.backendUrl);

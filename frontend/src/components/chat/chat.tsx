@@ -8,7 +8,6 @@ import { Conversation } from '../../types/conversation';
 import { useSocket } from '../../context/socket-context';
 import { Message } from '../../types/message';
 import  Typing  from './typing/typing';
-import { Socket } from 'socket.io-client';
 
 type ChatProps = {
   conversation: Conversation;
@@ -137,7 +136,7 @@ export default function Chat({ conversation }: ChatProps) {
               { isTyping ? Typing(typingUser?.avatar || 'https://via.placeholder.com/40', typingUser?.name || 'Typing...') : null }
       </div>
       <div className="chat-input">
-        <InputBar conversationId={conversation.id}/>
+        <InputBar conversationId={conversation.id} otherUsers={otherUsers}/>
       </div>
     </div>
   );

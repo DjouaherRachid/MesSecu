@@ -3,9 +3,10 @@ import './signin.css';
 import { validate } from 'react-email-validator';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import instance from '../../utils/instance';
-import { base64ToArrayBuffer } from '../../utils/encoding';
-import { storeKeysLocally } from '../../utils/crypto/key-manager';
+import instance from '../../api/instance';
+import { base64ToArrayBuffer, base64ToUint8Array } from '../../utils/encoding';
+import { generateInitialKeyBundle, storeKeysLocally } from '../../utils/crypto/key-manager';
+import signalProtocolStore, { SignalProtocolStore } from '../../utils/crypto/signal-store';
 
 const SignIn = () => {
 
@@ -32,7 +33,7 @@ const SignIn = () => {
       }
 
       try {
-        // Authentification
+        // 🔐 Authentification
         const response = await instance.post('/auth/login', {
           email: signin_email,
           password: signin_password,
@@ -41,7 +42,7 @@ const SignIn = () => {
         const { accessToken, user } = response.data;
         const userId = user.id;
 
-        // Cookies
+        // 🍪 Cookies
         Cookies.set('email', signin_email, { expires: 1 });
         Cookies.set('accessToken', accessToken, {
           expires: 15,
@@ -50,53 +51,61 @@ const SignIn = () => {
         });
         Cookies.set('userId', userId.toString(), { expires: 1 });
 
-        // Récupération des clés Signal
-        const [identityKeyRes, signedPreKeyRes, oneTimePreKeyRes] = await Promise.all([
-          instance.get(`/identity-keys/${userId}`),
-          instance.get(`/signed-pre-keys/${userId}`),
-          instance.get(`/one-time-pre-keys/${userId}`),
-        ]);
+        // 🔎 Vérification des clés déjà présentes localement
+        const identityKey = await signalProtocolStore.get('identityKey');
+        console.log('🔑 Clé d\'identité locale:', identityKey);
 
-        const identityKey = identityKeyRes.data;
-        const signedPreKey = signedPreKeyRes.data;
-        const oneTimePreKey = oneTimePreKeyRes.data; 
+        if (!identityKey || !identityKey.privKey) {
+          console.log('[Auth] Aucune clé privée locale. Génération d’un nouveau bundle...');
 
-        console.log('Identity Key:', identityKey);
-        console.log('Signed Pre Key:', signedPreKey);
-        console.log('One Time Pre Key:', oneTimePreKey);
+          const {
+            identityKey: generatedIdentityKey,
+            signedPreKey,
+            registrationId,
+            oneTimePreKeys
+          } = await generateInitialKeyBundle();
 
-        // Vérification des données
-        if (
-          !identityKey.public_key ||
-          !signedPreKey.public_key ||
-          !signedPreKey.signature ||
-          !oneTimePreKey[0].public_key ||
-          oneTimePreKey[0].used === true
-        ) {
-          throw new Error('Missing or invalid keys from server');
+          // 📤 Envoi des parties publiques au serveur
+          await instance.post('/keys/upload', {
+            identityKey: generatedIdentityKey.public_key,
+            signedPreKey: {
+              key_id: signedPreKey.key_id,
+              public_key: signedPreKey.public_key,
+              signature: signedPreKey.signature,
+            },
+            oneTimePreKeys: oneTimePreKeys.map(p => ({
+              key_id: p.key_id,
+              public_key: p.public_key,
+            })),
+          });
+
+          // 💾 Stockage local (clé complète)
+          await storeKeysLocally({
+            identity_key: {
+              pubKey: base64ToUint8Array(generatedIdentityKey.public_key),
+              privKey: new Uint8Array(generatedIdentityKey.private_key),
+            },
+            registration_id: registrationId,
+            signed_pre_key: {
+              key_id: signedPreKey.key_id,
+              keyPair: {
+                pubKey: base64ToUint8Array(signedPreKey.public_key),
+                privKey: new Uint8Array(signedPreKey.private_key),
+              },
+              signature: base64ToUint8Array(signedPreKey.signature),
+            },
+            one_time_pre_keys: oneTimePreKeys.map(preKey => ({
+              key_id: preKey.key_id,
+              keyPair: {
+                pubKey: new Uint8Array(preKey.public_key),
+                privKey: new Uint8Array(preKey.private_key),
+              },
+            })),
+          });
+
+        } else {
+          console.log('[Auth] Clés Signal déjà présentes localement.');
         }
-
-        // Conversion en ArrayBuffer
-        const identityPubKey = base64ToArrayBuffer(identityKey.public_key);
-        const signedPrePubKey = base64ToArrayBuffer(signedPreKey.public_key);
-        const signedPreSignature = base64ToArrayBuffer(signedPreKey.signature);
-        const oneTimePreKeyArray = oneTimePreKey.map((preKey: { key_id: any; public_key: string; }) => ({
-          key_id: preKey.key_id,
-          public_key: base64ToArrayBuffer(preKey.public_key),
-        }));
-
-        console.log('Identity Key ArrayBuffer:', oneTimePreKeyArray);
-
-        // Stockage local via libsignal
-        await storeKeysLocally({
-          identity_key: identityPubKey,
-          signed_pre_key: {
-            key_id: signedPreKey.key_id,
-            public_key: signedPrePubKey,
-            signature: signedPreSignature,
-          },
-          one_time_pre_keys: oneTimePreKeyArray,
-        });
 
         alert('Signed in successfully!');
         navigate('/dashboard', { replace: true });

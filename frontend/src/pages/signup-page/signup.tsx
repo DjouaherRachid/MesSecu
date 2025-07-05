@@ -3,7 +3,7 @@ import './signup.css';
 import { validate } from 'react-email-validator';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import instance from '../../utils/instance';
+import instance from '../../api/instance';
 import { generateInitialKeyBundle, storeKeysLocally, uploadKeyBundleToServer } from '../../utils/crypto/key-manager';
 import { base64ToArrayBuffer } from '../../utils/encoding';
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
@@ -62,30 +62,42 @@ const SignUp = () => {
         password: signup_password,
       })
       .then(async response => {
+        const { message, userId } = response.data;
         // Traitement pour une création réussie
         console.log('User created successfully with ID:', response.data);
         console.log("email", signup_email);
         Cookies.set('email', signup_email, { expires: 1 });
-        const userId = response.data.userId;
+        Cookies.set('userId', userId.toString(), { expires: 1 });
 
         try{
         // Générer les clés localement
         const keyBundle = await generateInitialKeyBundle();
         const oneTimePreKeyArray = keyBundle.oneTimePreKeys.map(preKey => ({
           key_id: preKey.key_id,
-          public_key: base64ToArrayBuffer(preKey.public_key),
+          keyPair: {
+            pubKey: new Uint8Array(preKey.public_key),
+            privKey: preKey.private_key ? new Uint8Array(preKey.private_key) : undefined,
+          },
         }));
 
         // Stocker les clés localement dans IndexedDB
         await storeKeysLocally({
-          identity_key: base64ToArrayBuffer(keyBundle.identityKey.public_key),
+          identity_key: {
+            pubKey: new Uint8Array(base64ToArrayBuffer(keyBundle.identityKey.public_key)),
+            privKey: new Uint8Array(keyBundle.identityKey.private_key),
+          },
+          registration_id: keyBundle.registrationId, 
           signed_pre_key: {
             key_id: keyBundle.signedPreKey.key_id,
-            public_key: base64ToArrayBuffer(keyBundle.signedPreKey.public_key),
-            signature: base64ToArrayBuffer(keyBundle.signedPreKey.signature),
+            keyPair: {
+              pubKey: new Uint8Array(base64ToArrayBuffer(keyBundle.signedPreKey.public_key)),
+              privKey: new Uint8Array(keyBundle.signedPreKey.private_key),
+            },
+            signature: new Uint8Array(base64ToArrayBuffer(keyBundle.signedPreKey.signature)),
           },
-        one_time_pre_keys: oneTimePreKeyArray,
+          one_time_pre_keys: oneTimePreKeyArray,
         });
+
 
         console.log('Generated key bundle:', keyBundle);
         console.log('response:', response);

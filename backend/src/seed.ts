@@ -49,15 +49,15 @@ async function seed() {
   const identityKeys = identityKeyRepo.create([
     {
       user: users[0],
-      public_key: 'alice-identity-public-key',
+      public_key: 'BcuBMHHK/1tDU88/iJ/GfAFwdJ7C0nbQkfgLQPpElWdZ',
     },
     {
       user: users[1],
-      public_key: 'bob-identity-public-key',
+      public_key: 'BZaWre8MKL1TF1jMPIz1Ty09h/poCWn13j/fzJLORrBd',
     },
     {
       user: users[2],
-      public_key: 'charlie-identity-public-key',
+      public_key: 'BYpbJGHM48y/KvZurPrET2Hu0dmaoctR87JzvDnfqy4e',
     },
   ]);
   await identityKeyRepo.save(identityKeys);
@@ -69,20 +69,20 @@ async function seed() {
     {
       user: users[0],
       key_id: 1,
-      public_key: 'alice-signed-pre-key-public-key',
-      signature: 'alice-signature',
+      public_key: 'BcxKxp5mwlFa6Y+wQGsZ7JEuIOEbLbCLSxNb4Rf6kK4/',
+      signature: 'yj2xvrXKqhREO217UEMY7DRBIfpiEmZGnumAmWnxhjTZsUa0nlxi6PqmxbBhWv2kHa07CoVKt0TKam6ZHnUAjw==',
     },
     {
       user: users[1],
       key_id: 2,
-      public_key: 'bob-signed-pre-key-public-key',
-      signature: 'bob-signature',
+      public_key: 'BfchyqKeyl4IY4FjU8gzdWg7cW5RuoB0Y4oGXGEiZdt5',
+      signature: 'QZLYchfLiJN1cSFID7ZHPAJHty0XKrU+5oAJQYISkhVcmTP1iWBfchyqKeyl4IY4FjU8gzdWg7cW5RuoB0Y4oGXGEiZdt5zZHjq5Ldma/yv+IV8aEYuLuhvQ/RbQhmiLDw==',
     },
     {
       user: users[2],
       key_id: 3,
-      public_key: 'charlie-signed-pre-key-public-key',
-      signature: 'charlie-signature',
+      public_key: 'BZw1EgsEGwOpfk+XbgV+p2v+78DqfOa+6EQWVaF0xpoF',
+      signature: 'cMoxdA8/wiEicDJlPzar4JGrt7XriTP+7yg93gSJ6ESHZk+47C+JS+Lu/kjaE4AWkq0A3EAPOm6doDsozEGQBw==',
     },
   ]);
   await signedPreKeyRepo.save(signedPreKeys);
@@ -90,26 +90,26 @@ async function seed() {
 
 
   // One-Time Pre-Keys (ManyToOne, avec key_id, public_key, used)
-  const oneTimePreKeys = oneTimePreKeyRepo.create([
-    {
-      user: users[0],
-      key_id: 101,
-      public_key: 'alice-one-time-pre-key-public-key-1',
-      used: false,
-    },
-    {
-      user: users[1],
-      key_id: 102,
-      public_key: 'bob-one-time-pre-key-public-key-1',
-      used: false,
-    },
-    {
-      user: users[2],
-      key_id: 103,
-      public_key: 'charlie-one-time-pre-key-public-key-1',
-      used: false,
-    },
-  ]);
+const oneTimePreKeys = oneTimePreKeyRepo.create([
+  {
+    user: users[0],
+    key_id: 101,
+    public_key: 'BReNHtynNWnbzwLj7U+KfCmMPpfSra9SKHyUyzfSrI4m',
+    used: false,
+  },
+  {
+    user: users[1],
+    key_id: 102,
+    public_key: 'BdAGyAMJOGBQ3k3AMinszW2ebERfHILNs8ObaxOUTQJE',
+    used: false,
+  },
+  {
+    user: users[2],
+    key_id: 103,
+    public_key: 'BYQfW+03yzV/aShKPSbBDYTh1hUbZ30Z7LfD1s3vSFBl',
+    used: false,
+  },
+]);
   await oneTimePreKeyRepo.save(oneTimePreKeys);
   console.log('✅ One-time pre-keys seeded');
 

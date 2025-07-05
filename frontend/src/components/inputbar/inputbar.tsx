@@ -1,31 +1,53 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './inputbar.css';
 import { useSocket } from '../../context/socket-context';
-import Cookies from 'js-cookie';
+import { ensureSessionWithRecipient, getSessionCipher } from '../../utils/crypto/session';
+import { encodeSignalMessage } from '../../utils/crypto/encryption';
 
 
 interface InputBarProps {
   onInput?: (query: string) => void;
   conversationId: number;
+  otherUsers: {user_id: number, username: string, avatar_url: string,}[] | [];
 }
 
-const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId }) => {
+const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId, otherUsers }) => {
   const [query, setQuery] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const socket = useSocket();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
-    if (!trimmed || !socket) return;
+    if (!trimmed || !socket || !otherUsers.length) return;
+    try {
+      const messageBuffer = new TextEncoder().encode(trimmed).slice().buffer;
 
-    socket.emit('send_message', {
-      conversationId :conversationId,
-      content: trimmed,
-    });
+      for (const user of otherUsers) {
+        await ensureSessionWithRecipient(user.user_id); 
 
-    setQuery('');
+        const cipher = getSessionCipher(user.user_id);
+        console.log('1');
+        const encrypted = await (await cipher).encrypt(messageBuffer);
+        console.log('2');
+        const payload = encodeSignalMessage(encrypted);
+
+        socket.emit('send_message', {
+          conversationId,
+          to: user.user_id,
+          content: payload.body,
+          signal_type: payload.type,
+          registrationId: payload.registrationId,
+          preKeyId: payload.preKeyId,
+          signedPreKeyId: payload.signedPreKeyId,
+        });
+      }
+
+      setQuery('');
+    } catch (error) {
+      console.error("Erreur lors du chiffrement ou de l'envoi :", error);
+    }
   };
 
   const handleInput = () => {

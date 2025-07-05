@@ -1,4 +1,4 @@
-import instance from "../utils/instance";
+import instance from "./instance";
 
 export const createConversation = async (
   name: string,

@@ -1,5 +1,8 @@
 // utils/crypto/encryption.ts
 
+import { arrayBufferToBase64 } from "../encoding";
+import { getSessionCipher } from "./session";
+
 export async function encryptMessage(sessionKey: CryptoKey, plaintext: string): Promise<string> {
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
   const enc = new TextEncoder().encode(plaintext);
@@ -30,3 +33,38 @@ export async function decryptMessage(sessionKey: CryptoKey, b64cipher: string): 
 
   return new TextDecoder().decode(plaintext);
 }
+
+export function encodeSignalMessage(encrypted: any) {
+  return {
+    type: encrypted.type,
+    body: arrayBufferToBase64(encrypted.body),
+    ...(encrypted.registrationId && { registrationId: encrypted.registrationId }),
+    ...(encrypted.preKeyId && { preKeyId: encrypted.preKeyId }),
+    ...(encrypted.signedPreKeyId && { signedPreKeyId: encrypted.signedPreKeyId }),
+  };
+}
+
+// export async function encryptMessageForGroup(
+//   plaintext: string,
+//   participants: number[],
+//   currentUserId: number
+// ): Promise<
+//   { recipientId: number; ciphertext: string; type: number }[]
+// > {
+//   const results = [];
+
+//   for (const recipientId of participants) {
+//     if (recipientId === currentUserId) continue;
+
+//     const cipher = getSessionCipher(recipientId);
+//     const encrypted = await cipher.encrypt(plaintext);
+
+//     results.push({
+//       recipientId,
+//       ciphertext: btoa(String.fromCharCode(...encrypted.body)), 
+//       type: encrypted.type, // 3 = preKeyMessage ou 1 = SignalMessage
+//     });
+//   }
+
+//   return results;
+// }
