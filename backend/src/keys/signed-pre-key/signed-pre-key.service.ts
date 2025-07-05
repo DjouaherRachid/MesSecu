@@ -16,11 +16,11 @@ export class SignedPreKeysService {
     return this.repo.save(key);
   }
 
-  async findActiveByUserId(user_id: number) {
-    const keys = await this.repo.find({
-      where: { user: { user_id }, active: true },
-      order: { created_at: 'DESC' }
-    });
-    return keys;
-  }
+async findActiveByUserId(user_id: number): Promise<SignedPreKey | null> {
+  const key = await this.repo.findOne({
+    where: { user: { user_id }, active: true },
+    order: { created_at: 'DESC' },
+  });
+  return key;
+}
 }

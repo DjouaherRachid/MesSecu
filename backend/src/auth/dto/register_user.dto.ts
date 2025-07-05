@@ -6,7 +6,8 @@ export class RegisterUserDto {
   password: string;
 
   // Champs pour Signal Protocol
-  identity_public_key: string;
-  signed_pre_key: string;
-  signed_pre_key_signature: string;
+  // identity_public_key: string;
+  // signed_pre_key: string;
+  // signed_pre_key_signature: string;
+  // signed_pre_key_id: number;
 }

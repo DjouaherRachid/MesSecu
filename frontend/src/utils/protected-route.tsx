@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import instance from './config'; 
+import instance from './instance'; 
 
 interface ProtectedRouteProps {
   element: React.ComponentType<any>;

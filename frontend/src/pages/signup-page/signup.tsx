@@ -3,7 +3,11 @@ import './signup.css';
 import { validate } from 'react-email-validator';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import instance from '../../utils/config';
+import instance from '../../utils/instance';
+import { generateInitialKeyBundle, storeKeysLocally, uploadKeyBundleToServer } from '../../utils/crypto/key-manager';
+import { base64ToArrayBuffer } from '../../utils/encoding';
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+console.log('INTERNAL_API_KEY:', INTERNAL_API_KEY);
 
 const SignUp = () => {
 
@@ -57,20 +61,61 @@ const SignUp = () => {
         email: signup_email,
         password: signup_password,
       })
-      .then(response => {
+      .then(async response => {
         // Traitement pour une création réussie
         console.log('User created successfully with ID:', response.data);
         console.log("email", signup_email);
         Cookies.set('email', signup_email, { expires: 1 });
+        const userId = response.data.userId;
+
+        try{
+        // Générer les clés localement
+        const keyBundle = await generateInitialKeyBundle();
+        const oneTimePreKeyArray = keyBundle.oneTimePreKeys.map(preKey => ({
+          key_id: preKey.key_id,
+          public_key: base64ToArrayBuffer(preKey.public_key),
+        }));
+
+        // Stocker les clés localement dans IndexedDB
+        await storeKeysLocally({
+          identity_key: base64ToArrayBuffer(keyBundle.identityKey.public_key),
+          signed_pre_key: {
+            key_id: keyBundle.signedPreKey.key_id,
+            public_key: base64ToArrayBuffer(keyBundle.signedPreKey.public_key),
+            signature: base64ToArrayBuffer(keyBundle.signedPreKey.signature),
+          },
+        one_time_pre_keys: oneTimePreKeyArray,
+        });
+
+        console.log('Generated key bundle:', keyBundle);
+        console.log('response:', response);
+
+        // Envoyer les clés au backend
+        await uploadKeyBundleToServer(userId, keyBundle);
+      } catch (error) {
+            // Annulation de l'utilisateur si les clés ne peuvent pas être générées ou envoyées
+            try {
+              await instance.delete(`/internal/users/${userId}`, {
+                headers: {
+                  'x-internal-api-key': INTERNAL_API_KEY, 
+                }
+              });
+              alert('User creation rolled back due to an error during key setup.');
+            } catch (deleteError) {
+              console.error('Failed to delete user after key setup failure:', deleteError);
+              alert('Critical error: user created but key setup failed.');
+            }
+          }
 
         alert('Your account has been registered successfully!');
-        navigate('/doubleAuth');
+        navigate('/dashboard');
       })
-      .catch(error => {
+      .catch(async error => {
+
         if (error.response) {
           if (error.response.status === 409) {
-            console.log('Email already exists');
-            alert('Email already exists');
+            console.log('Email or username already exists',error);
+            alert('Email or username already exists');
           } else {
             console.log('An error occurred:', error.response.statusText);
             alert('An error occured:');

@@ -17,15 +17,6 @@ export class AuthService {
     const emailExists = await this.userService.findByEmail(dto.email);
     if (emailExists) throw new ConflictException('Email déjà utilisé');
 
-    // Vérification des champs Signal obligatoires
-    if (
-      !dto.identity_public_key ||
-      !dto.signed_pre_key ||
-      !dto.signed_pre_key_signature
-    ) {
-      throw new ConflictException('Clés Signal manquantes.');
-    }
-
     // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 

@@ -5,7 +5,7 @@ import { OneTimePreKey } from './one-time-pre-key.entity';
 import { User } from '../../user/user.entity';
 
 @Injectable()
-export class KeyService {
+export class OneTimePreKeyService {
   constructor(
     @InjectRepository(OneTimePreKey)
     private keyRepository: Repository<OneTimePreKey>,
@@ -38,7 +38,7 @@ export class KeyService {
     return this.keyRepository.find({ where: { user: { user_id: userId } } });
   }
 
-    async create(user: Partial<User>, keyData: { key_id: number; public_key: string }): Promise<OneTimePreKey> {
+  async create(user: Partial<User>, keyData: { key_id: number; public_key: string }): Promise<OneTimePreKey> {
     const newKey = this.keyRepository.create({
       user,
       key_id: keyData.key_id,
@@ -47,4 +47,20 @@ export class KeyService {
     });
     return this.keyRepository.save(newKey);
   }
+
+  async createMany(userId: number, keysData: { key_id: number; public_key: string }[]): Promise<OneTimePreKey[]> {
+    const user = { user_id: userId } as Partial<User>;
+
+    const newKeys = keysData.map(keyData =>
+      this.keyRepository.create({
+        user,
+        key_id: keyData.key_id,
+        public_key: keyData.public_key,
+        used: false,
+      }),
+    );
+
+    return this.keyRepository.save(newKeys);
+  }
+
 }

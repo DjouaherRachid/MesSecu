@@ -1,37 +1,32 @@
-import { Controller, Post, Get, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { SessionService } from './session.service';
 
 @Controller('sessions')
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 
+  // Upsert session : créer ou mettre à jour
   @Post()
-  createSession(
-    @Body('userId', ParseIntPipe) userId: number,
-    @Body('peerId', ParseIntPipe) peerId: number,
-    @Body('sessionData') sessionData: any,
+  async upsertSession(
+    @Body() body: { userId: number; peerId: number; sessionData: any }
   ) {
-    return this.sessionService.createSession(userId, peerId, sessionData);
+    return this.sessionService.upsertSession(body.userId, body.peerId, body.sessionData);
   }
 
-  @Get()
-  findAll() {
-    return this.sessionService.findAll();
-  }
-
+  // Récupérer session entre 2 users
   @Get(':userId/:peerId')
-  findByUserAndPeer(
+  async getSession(
     @Param('userId', ParseIntPipe) userId: number,
-    @Param('peerId', ParseIntPipe) peerId: number,
+    @Param('peerId', ParseIntPipe) peerId: number
   ) {
-    return this.sessionService.findByUserAndPeer(userId, peerId);
+    const session = await this.sessionService.findByUserAndPeer(userId, peerId);
+    if (!session) return null;
+    return session.session_data;
   }
 
-  @Delete(':userId/:peerId')
-  deleteByUserAndPeer(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Param('peerId', ParseIntPipe) peerId: number,
-  ) {
-    return this.sessionService.deleteByUserAndPeer(userId, peerId);
+  // Récupérer les clés publiques d'un utilisateur pour init X3DH
+  @Get('keys/:userId')
+  async getPublicKeys(@Param('userId', ParseIntPipe) userId: number) {
+    return this.sessionService.getPublicKeysForUser(userId);
   }
 }

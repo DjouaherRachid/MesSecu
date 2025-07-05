@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, ParseIntPipe, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, ParseIntPipe, ForbiddenException, Headers, UnauthorizedException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { JwtAuthGuard } from '../auth/guards/ws-jwt.guard';
 import { Request } from 'express';
 
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+console.log('INTERNAL_API_KEY:', INTERNAL_API_KEY);
 
 @Controller('users')
 export class UserController {
@@ -41,9 +43,16 @@ export class UserController {
   update(@Param('id') id: number, @Body() updateUser: Partial<User>) {
     return this.userService.update(id, updateUser);
   }
-
+  
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  async remove(
+    @Param('id') id: number,
+    @Headers('x-internal-api-key') apiKey?: string,
+  ) {
+    if (apiKey !== INTERNAL_API_KEY) {
+      throw new UnauthorizedException('Invalid internal API key');
+    }
     return this.userService.remove(id);
   }
+
 }
