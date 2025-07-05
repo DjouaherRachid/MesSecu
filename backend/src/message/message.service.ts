@@ -40,6 +40,9 @@ export class MessageService {
       throw new MessageConversationMissingException();
     }
 
+    console.log('Message content length:', message.content.length);
+    console.log("content",message.content);
+
     return await this.messageRepository.save(message);
   }
 

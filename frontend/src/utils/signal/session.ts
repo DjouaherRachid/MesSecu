@@ -3,28 +3,7 @@ import signalProtocolStore, { SignalProtocolStore } from "./signal-store";
 import * as libsignal from '@privacyresearch/libsignal-protocol-typescript';
 import { fetchPreKeyBundle } from "./key-manager";
 import instance from "../../api/instance";
-
-const ensureArrayBuffer = (input: any) => {
-  console.log('Type détecté:', Object.prototype.toString.call(input)); // affiche le type interne
-
-  if (input instanceof ArrayBuffer) {
-    return input;
-  }
-
-  if (input instanceof Uint8Array) {
-      if (input.buffer instanceof ArrayBuffer) {
-      }else {
-      }
-    return input.buffer;
-  }
-
-  if (typeof SharedArrayBuffer !== 'undefined' && input instanceof SharedArrayBuffer) {
-    throw new Error('SharedArrayBuffer non supporté');
-  }
-
-  console.log('Type inconnu ou incompatible');
-  throw new Error('Input must be ArrayBuffer or Uint8Array');
-};
+import { ensureArrayBuffer } from "../encoding";
 
 /**
  * Crée une session avec un destinataire à partir de son preKeyBundle
@@ -73,7 +52,7 @@ export async function buildSessionWithRecipient({
   console.log('[buildSessionWithRecipient] 📦 preKeyBundle construit :', preKeyBundle);
 
   // créer la session
-  await builder.processPreKey(preKeyBundle);
+  await builder.processPreKey(preKeyBundle as any);
 
   // Vérification : session bien créée ?
   const sessionRecord = await signalProtocolStore.loadSession(address.toString());
@@ -150,8 +129,10 @@ let sharedStore: SignalProtocolStore | null = null;
 export async function getSessionCipher(recipientId: number) {
   if (!sharedStore) {
     sharedStore = new SignalProtocolStore(); // Init une seule fois
+    console.log('[getSessionCipher] SignalProtocolStore initialisé');
   }
 
   const address = new libsignal.SignalProtocolAddress(recipientId.toString(), 1);
+  console.log('[getSessionCipher] Création du SessionCipher pour', address.toString());
   return new libsignal.SessionCipher(sharedStore, address);
 }

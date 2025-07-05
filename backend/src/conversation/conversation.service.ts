@@ -7,6 +7,7 @@ import { ConversationParticipant, UserRole } from './conversation-participant.en
 import { User } from '../user/user.entity';
 import { CreateConversationDto } from 'src/auth/dto/conversation-dto';
 import { SocketGateway } from '../socket/socket.gateway';
+import { sign } from 'crypto';
 
 @Injectable()
 export class ConversationService {
@@ -71,6 +72,7 @@ export class ConversationService {
       sender_name:
         conv.participants.find(u => u.user_id === lastMessage?.sender_id)?.user.username || '',
       seen: isSeen,
+      signal_type: lastMessage?.signal_type || 3, // Par défaut, on utilise le type 3
       created_at: lastMessage?.created_at || null,
     },
   };

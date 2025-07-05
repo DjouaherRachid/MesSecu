@@ -5,9 +5,11 @@ import {
   JoinColumn,
   Column,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Conversation } from './conversation.entity';
+import { ConversationKey } from '../keys/conversation-key/conversation-keys.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -42,5 +44,8 @@ export class ConversationParticipant {
 
   @Column({ type: 'boolean', default: false })
   is_favorite: boolean;
+  
+  @OneToMany(() => ConversationKey, ck => ck.conversation_participant)
+  conversation_keys: ConversationKey[];
 
 }

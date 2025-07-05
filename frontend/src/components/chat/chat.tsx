@@ -6,8 +6,10 @@ import { fetchMessages } from '../../api/messages';
 import Cookies from 'js-cookie';
 import { Conversation } from '../../types/conversation';
 import { useSocket } from '../../context/socket-context';
-import { Message } from '../../types/message';
+import { Message, NewMessagePayload } from '../../types/message';
 import  Typing  from './typing/typing';
+import { decryptAndNormalizeAesMessage } from './aes';
+import { getOrFetchAesKey } from '../../utils/AES-GSM/aes';
 
 type ChatProps = {
   conversation: Conversation;
@@ -27,32 +29,59 @@ export default function Chat({ conversation }: ChatProps) {
   ? conversation.other_users
   : [conversation.other_users]; 
 
-  console.log('otherUsers:', otherUsers);
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const aesKey = await getOrFetchAesKey(conversation.id, userId);
 
-    useEffect(() => {
-      const loadMessages = async () => {
-        try {
-          const data = await fetchMessages(Number(conversation.id));
-          setMessages(data);
-        } finally {
-          setLoading(false);
-        }
-      };
+        const rawMessages = await fetchMessages(Number(conversation.id));
 
-      if (conversation.id) {
-        loadMessages();
+        setMessages(rawMessages);
+        
+        // Transforme et déchiffre chaque message
+        const decryptedMessages = await Promise.all(
+          rawMessages.map((message: Message) => 
+            decryptAndNormalizeAesMessage({
+              conversationId: conversation.id.toString(),
+              signal_type: Number(message.signal_type),
+              message,
+            })
+          )
+        );
+
+        setMessages(decryptedMessages);
+      } catch (error) {
+        console.error("[loadMessages] Échec du déchiffrement des messages :", error);
+      } finally {
+        setLoading(false);
       }
-    }, [conversation.id]);
+    };
+
+    if (conversation.id) {
+      loadMessages();
+    }
+  }, [conversation.id]);
 
   useEffect(() => {
     if (!socket) return;
 
     // Nouveau message reçu
-    const handleNewMessage = (data: { conversationId: number; message: Message }) => {
-      if (data.conversationId === conversation.id) {
-        setMessages(prev => [...prev, data.message]);
-      }
-    };
+  const handleNewMessage = async (data: any) => {
+    // if (data.conversationId !== conversation.id.toString()) return;
+
+    const message = data.message;
+
+    try {
+      const decryptedMessage = await decryptAndNormalizeAesMessage({
+              conversationId: data.conversationId.toString(),
+              signal_type: 1,
+              message,
+            })
+      setMessages(prev => [...prev, decryptedMessage]);
+    } catch (err) {
+      console.error('[handleNewMessage] Échec du déchiffrement :', err);
+    }
+  };
 
     // Un message a été lu
     const handleMessageRead = (data: {
@@ -72,12 +101,10 @@ export default function Chat({ conversation }: ChatProps) {
       };
     
     const handleUserTyping = (data: { userId: number; conversationId: number }) => {
-      console.log('user_typing:', data);
       if (data.conversationId === conversation.id) {
         setIsTyping(true);
       }
       const user = otherUsers.find(u => u.user_id === data.userId);
-      console.log('User found:', user);
       if (user) {
         setTypingUser({ name: user.username, avatar: user.avatar_url });
       }
@@ -85,7 +112,6 @@ export default function Chat({ conversation }: ChatProps) {
     };
 
     const handleUserStoppingTyping = (data: { conversationId: number }) => {
-      console.log('User stopped typing:', data);
       if (data.conversationId === conversation.id) {
         setIsTyping(false);
       }
@@ -120,7 +146,6 @@ export default function Chat({ conversation }: ChatProps) {
         {error && <p className="error">{error}</p>}
         
         {!loading && !error && messages.map((msg) => (
-          console.log('Message:', msg.reads?.some(r => r.user_id !== msg.sender.user_id)),
           <MessageBubble
             key={msg.message_id}
             messageId={msg.message_id}

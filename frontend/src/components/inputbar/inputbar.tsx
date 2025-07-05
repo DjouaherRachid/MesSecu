@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './inputbar.css';
 import { useSocket } from '../../context/socket-context';
-import { ensureSessionWithRecipient, getSessionCipher } from '../../utils/crypto/session';
-import { encodeSignalMessage } from '../../utils/crypto/encryption';
+import {  encryptMessageForRecipient } from '../../utils/signal/encryption';
+import { decryptWithAesGcm, encryptWithAesGcm, getOrFetchAesKey } from '../../utils/AES-GSM/aes';
+import Cookies from 'js-cookie';
 
 
 interface InputBarProps {
@@ -17,34 +18,49 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId, otherUsers
   const socket = useSocket();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const trimmed = query.trim();
+
+  //   if (!trimmed || !socket || !otherUsers.length) return;
+  //   try {
+  //     for (const user of otherUsers) {
+  //       const encryptedPayload = await encryptMessageForRecipient(user.user_id, trimmed);
+        
+  //       socket.emit('send_message', {
+  //         conversationId,
+  //         ...encryptedPayload,
+  //       });
+  //     }
+
+  //     setQuery('');
+  //   } catch (error) {
+  //     console.error("Erreur lors du chiffrement ou de l'envoi :", error);
+  //   }
+  // };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
+
     if (!trimmed || !socket || !otherUsers.length) return;
+
     try {
-      const messageBuffer = new TextEncoder().encode(trimmed).slice().buffer;
+      const userId = parseInt(Cookies.get('userId') as string);
+      // 1. Récupération de la clé AES de la conversation (depuis cache local ou génération)
+      const aesKey = await getOrFetchAesKey(conversationId, userId);
 
-      for (const user of otherUsers) {
-        await ensureSessionWithRecipient(user.user_id); 
+      // 2. Chiffrement du message avec AES-GCM
+      const encryptedContent = await encryptWithAesGcm(trimmed, aesKey);
+    
+      // 4. Envoi du message chiffré via socket
+      socket.emit("send_message", {
+        conversationId,
+        content: encryptedContent,
+        signal_type: 1, // ou autre identifiant pour RSA-GCM
+      });
 
-        const cipher = getSessionCipher(user.user_id);
-        console.log('1');
-        const encrypted = await (await cipher).encrypt(messageBuffer);
-        console.log('2');
-        const payload = encodeSignalMessage(encrypted);
-
-        socket.emit('send_message', {
-          conversationId,
-          to: user.user_id,
-          content: payload.body,
-          signal_type: payload.type,
-          registrationId: payload.registrationId,
-          preKeyId: payload.preKeyId,
-          signedPreKeyId: payload.signedPreKeyId,
-        });
-      }
-
-      setQuery('');
+      setQuery("");
     } catch (error) {
       console.error("Erreur lors du chiffrement ou de l'envoi :", error);
     }
@@ -60,7 +76,6 @@ const InputBar: React.FC<InputBarProps> = ({ onInput, conversationId, otherUsers
 
     // Émettre "typing" quand on commence à écrire
     if (!socket) return;
-      console.log('[InputBar] Emission de l\'événement "user_typing"');
       socket.emit('user_typing', { conversationId :conversationId});
 
     // Clear et reset un timeout pour envoyer "stop_typing"

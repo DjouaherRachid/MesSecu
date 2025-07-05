@@ -1,4 +1,5 @@
 .left-sidebar{
+    display: flex;
     width: 30%;
     background-color: #f1f1f1;
     z-index: 1;
@@ -15,12 +16,22 @@
     padding: 5%;
     font-weight: bold;
     color: #333;
-    border-bottom: 2px solid #008d97;
     flex-direction: row;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
+}
+
+.sidebar-footer {
+    padding: 5%;
+    font-weight: bold;
+    color: #333;
+    border-top: 2px solid black;
+    flex-direction: column;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .add-icon {
@@ -45,7 +56,25 @@
     background-color: #006f7a;
 }
 
+.download-button {
+    background-color: #737604;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: content;
+    height: fit-content;
+}
+
+.download-button:hover {
+    background-color: #f2fa06;
+}
+
 ul.vertical {
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: scroll;
     list-style-type: none;
     margin: 0;
     padding: 0;

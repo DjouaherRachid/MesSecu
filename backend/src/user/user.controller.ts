@@ -5,18 +5,19 @@ import { JwtAuthGuard } from '../auth/guards/ws-jwt.guard';
 import { Request } from 'express';
 
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
-console.log('INTERNAL_API_KEY:', INTERNAL_API_KEY);
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Body() user: Partial<User>) {
     return this.userService.create(user);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.userService.findAll();
   }
@@ -29,6 +30,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: number) {
     return this.userService.findOne(id);
   }
@@ -40,6 +42,7 @@ export class UserController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   update(@Param('id') id: number, @Body() updateUser: Partial<User>) {
     return this.userService.update(id, updateUser);
   }

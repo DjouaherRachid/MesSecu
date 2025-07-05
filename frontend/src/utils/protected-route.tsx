@@ -12,13 +12,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element: Component, ...
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    console.log("ProtectedRoute useEffect called");
+    // console.log("ProtectedRoute useEffect called");
     const checkSession = async () => {
       try {
         // Appelle /users/me pour valider le token en backend
         await instance.get('/users/me');
         setIsAuthenticated(true);
-        console.log("User is authenticated");
       } catch (error) {
         setIsAuthenticated(false);
         console.log("User is not authenticated", error);

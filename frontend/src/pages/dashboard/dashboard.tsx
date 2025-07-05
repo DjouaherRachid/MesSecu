@@ -7,12 +7,7 @@ import CreateConversationModal from '../../components/modals/create-conversation
 
 const Dashboard = () => {
     const [conversation, setConversation] = useState([] as unknown as Conversation);
-    console.log('Dashboard conversation:', conversation);
     const [showCreateConversationModal, setShowCreateConversationModal] = useState(false);
-
-    useEffect(() => {
-        console.log('Conversation', conversation);
-    }, [conversation]);
 
     return(
         <div className="animated-background">

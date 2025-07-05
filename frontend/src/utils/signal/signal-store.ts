@@ -1,10 +1,13 @@
+import { IdentityKey } from '../../types/keys';
 // src/lib/signal/signal-protocol-store.ts
 import { Direction } from "@privacyresearch/libsignal-protocol-typescript/lib/types";
 import { get, set, del } from "idb-keyval";
+import { ensureArrayBuffer } from '../encoding';
 
 export class SignalProtocolStore {
   constructor() {
   }
+
 
   async put(key: string, value: any): Promise<void> {
     await set(key, value);
@@ -59,26 +62,21 @@ export class SignalProtocolStore {
   }
 
   async setIdentityKey(identityKey: any): Promise<void> {
+
     await this.put('identityKey', identityKey);
   }
 
   async getIdentityKeyPair(): Promise<any> {
-    const keys = await this.get('identityKey');
-    console.log('[SignalProtocolStore] Récupération de la clé d\'identité locale...', keys);
+  const keys = await this.get('identityKey');
 
-    if (!keys) return null;
+  if (!keys) return null;
 
-    return {
-      pubKey: keys.pubKey.buffer.slice(
-        keys.pubKey.byteOffset,
-        keys.pubKey.byteOffset + keys.pubKey.byteLength
-      ),
-      privKey: keys.privKey.buffer.slice(
-        keys.privKey.byteOffset,
-        keys.privKey.byteOffset + keys.privKey.byteLength
-      ),
-    };
-  }
+  return {
+    pubKey: ensureArrayBuffer(keys.pubKey),
+    privKey: ensureArrayBuffer(keys.privKey),
+  };
+}
+
 
   async getLocalRegistrationId(): Promise<any> {
     return await this.get('registration_id');
@@ -91,8 +89,9 @@ export class SignalProtocolStore {
     await this.put(`identityKey:${identifier}`, identityKey);
     return isNew;
   }
-
+  
   async loadIdentityKey(identifier: string): Promise<any> {
+    const IdentityKey = await this.get(`identityKey:${identifier}`);
     return await this.get(`identityKey:${identifier}`);
   }
 

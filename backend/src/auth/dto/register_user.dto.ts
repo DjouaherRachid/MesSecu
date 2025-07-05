@@ -4,6 +4,7 @@ export class RegisterUserDto {
   username: string;
   email: string;
   password: string;
+  rsa_public_key: string;
 
   // Champs pour Signal Protocol
   // identity_public_key: string;

@@ -1,6 +1,6 @@
 import * as libsignal from '@privacyresearch/libsignal-protocol-typescript';
 import instance from '../../api/instance';
-import { base64ToArrayBuffer, toBase64 } from '../encoding';
+import {  base64ToArrayBuffer, ensureArrayBuffer, toBase64 } from '../encoding';
 import signalProtocolStore, { SignalProtocolStore } from './signal-store';
 
 export async function generateInitialKeyBundle(oneTimePreKeyCount = 100) {
@@ -8,28 +8,32 @@ export async function generateInitialKeyBundle(oneTimePreKeyCount = 100) {
   const registrationId = await libsignal.KeyHelper.generateRegistrationId();
   const signedPreKey = await libsignal.KeyHelper.generateSignedPreKey(identityKeyPair, 1);
 
-  // Générer un lot de one-time pre keys
+  // Générer un lot de one-time pre keys (clé publique en base64 ici directement)
   const oneTimePreKeys = [];
+  const oneTimePreKeysArray = []; // Pour stockage local
+
   for (let i = 0; i < oneTimePreKeyCount; i++) {
-    const preKey = await libsignal.KeyHelper.generatePreKey(i + 1); 
+    const preKey = await libsignal.KeyHelper.generatePreKey(i + 1);
+
+    // Pour le serveur
     oneTimePreKeys.push({
       key_id: preKey.keyId,
-      public_key: preKey.keyPair.pubKey,
-      private_key: preKey.keyPair.privKey,
+      public_key: toBase64(preKey.keyPair.pubKey),     
+      private_key: toBase64(preKey.keyPair.privKey),  
       used: false,
+    });
+
+    // Pour le stockage local
+    oneTimePreKeysArray.push({
+      key_id: preKey.keyId,
+      keyPair: {
+        pubKey: new Uint8Array(preKey.keyPair.pubKey),
+        privKey: new Uint8Array(preKey.keyPair.privKey),
+      },
     });
   }
 
-  // Préparer les clés au format attendu par storeKeysLocally
-  const oneTimePreKeysArray = oneTimePreKeys.map(preKey => ({
-    key_id: preKey.key_id,
-    keyPair: {
-      pubKey: new Uint8Array(preKey.public_key),
-      privKey: new Uint8Array(preKey.private_key), 
-    },
-  }));
-
-
+  // Clé signée
   const signedPreKeyObj = {
     key_id: signedPreKey.keyId,
     keyPair: {
@@ -52,15 +56,16 @@ export async function generateInitialKeyBundle(oneTimePreKeyCount = 100) {
     one_time_pre_keys: oneTimePreKeysArray,
   });
 
+  // Retourner les clés encodées vers le backend
   return {
     identityKey: {
       public_key: toBase64(identityKeyPair.pubKey),
-      private_key: identityKeyPair.privKey, 
+      private_key: toBase64(identityKeyPair.privKey),
     },
     signedPreKey: {
-      public_key: toBase64(signedPreKey.keyPair.pubKey),
-      private_key: signedPreKey.keyPair.privKey,
       key_id: signedPreKey.keyId,
+      public_key: toBase64(signedPreKey.keyPair.pubKey),
+      private_key: toBase64(signedPreKey.keyPair.privKey),
       signature: toBase64(signedPreKey.signature),
     },
     registrationId,
@@ -83,7 +88,6 @@ export async function uploadKeyBundleToServer(user_id: number, bundle: any) {
     signature: signedPreKey.signature,
   });
 
-  console.log('oneTimePreKeys', oneTimePreKeys);
 
   if (oneTimePreKeys && Array.isArray(oneTimePreKeys)) {
     for (const preKey of oneTimePreKeys) {
@@ -117,60 +121,72 @@ export async function uploadKeyBundleToServer(user_id: number, bundle: any) {
     one_time_pre_keys,
   }: StoreKeysParams) => {
 
-    console.log('[storeKeysLocally] Stockage des clés Signal localement...');
-
     await signalProtocolStore.put('identityKey', {
-      pubKey: identity_key.pubKey,
-      privKey: identity_key.privKey,
+      pubKey: ensureArrayBuffer(identity_key.pubKey),
+      privKey: ensureArrayBuffer(identity_key.privKey),
     });
 
     await signalProtocolStore.put('registrationId', registration_id);
 
     await signalProtocolStore.storeSignedPreKey(signed_pre_key.key_id, {
       keyId: signed_pre_key.key_id,
-      keyPair: signed_pre_key.keyPair,
-      signature: signed_pre_key.signature,
+      pubKey: ensureArrayBuffer(signed_pre_key.keyPair.pubKey),
+      privKey: ensureArrayBuffer(signed_pre_key.keyPair.privKey),
+      signature: ensureArrayBuffer(signed_pre_key.signature),
     });
 
     for (const preKey of one_time_pre_keys) {
       await signalProtocolStore.storePreKey(preKey.key_id, {
         keyId: preKey.key_id,
-        keyPair: preKey.keyPair,
+        pubKey: ensureArrayBuffer(preKey.keyPair.pubKey),
+        privKey: ensureArrayBuffer(preKey.keyPair.privKey),
       });
     }
 
-    console.log(`[storeKeysLocally] Clés stockées localement : identityKey ✅, signedPreKey id=${signed_pre_key.key_id} ✅, ${one_time_pre_keys.length} one-time pre-keys ✅`);
   };
+
+
 
 export async function fetchPreKeyBundle(recipientId: number) {
-  // 1. Récupérer la signed pre key
-  const signedPreKeyResp = await instance.get(`/signed-pre-keys/${recipientId}`);
-  const signedPreKeyData = signedPreKeyResp.data;
+  try {
+    // 1. Signed Pre Key
+    const signedPreKeyResp = await instance.get(`/signed-pre-keys/${recipientId}`);
+    const signedPreKeyData = signedPreKeyResp.data;
 
-  // 2. Récupérer la identity key
-  const identityKeyResp = await instance.get(`/identity-keys/${recipientId}`);
-  const identityKeyData = identityKeyResp.data;
+    // 2. Identity Key
+    const identityKeyResp = await instance.get(`/identity-keys/${recipientId}`);
+    const identityKeyData = identityKeyResp.data;
 
-  // 3. Récupérer la liste des one-time pre keys (peut être vide)
-  const oneTimePreKeysResp = await instance.get(`/one-time-pre-keys/${recipientId}/`);
-  const oneTimePreKeysData = oneTimePreKeysResp.data;
+    // 3. One-Time Pre Keys
+    const oneTimePreKeysResp = await instance.get(`/one-time-pre-keys/${recipientId}/`);
+    const oneTimePreKeysData = oneTimePreKeysResp.data;
 
-  const oneTimePreKey = oneTimePreKeysData.find((key: any) => !key.used);
+    const oneTimePreKey = oneTimePreKeysData.find((key: any) => {
+      return (
+        !key.used &&
+        typeof key.public_key === "string" &&
+        key.public_key.length >= 20 && // protection minimale
+        /^[A-Za-z0-9+/=]+$/.test(key.public_key)
+      );
+    });
 
-  return {
-    recipientId,
-    registrationId: signedPreKeyData.id,
+    return {
+      recipientId,
+      registrationId: signedPreKeyData.id,
 
-    // ✅ Conversion des clés base64 → Uint8Array
-    identityKey: new Uint8Array(base64ToArrayBuffer(identityKeyData.public_key)),
+      identityKey: new Uint8Array(base64ToArrayBuffer('identityKey', identityKeyData.public_key)),
 
-    signedPreKey: new Uint8Array(base64ToArrayBuffer(signedPreKeyData.public_key)),
-    signedPreKeyId: signedPreKeyData.key_id,
-    signedPreKeySignature: new Uint8Array(base64ToArrayBuffer(signedPreKeyData.signature)),
+      signedPreKey: new Uint8Array(base64ToArrayBuffer('signedPreKey', signedPreKeyData.public_key)),
+      signedPreKeyId: signedPreKeyData.key_id,
+      signedPreKeySignature: new Uint8Array(base64ToArrayBuffer('signedPreKeySignature', signedPreKeyData.signature)),
 
-    oneTimePreKey: oneTimePreKey
-      ? new Uint8Array(base64ToArrayBuffer(oneTimePreKey.public_key))
-      : undefined,
-    oneTimePreKeyId: oneTimePreKey?.key_id,
-  };
+      oneTimePreKey: oneTimePreKey
+        ? new Uint8Array(base64ToArrayBuffer('oneTimePreKey', oneTimePreKey.public_key))
+        : undefined,
+      oneTimePreKeyId: oneTimePreKey?.key_id,
+    };
+  } catch (err) {
+    console.error(`❌ [fetchPreKeyBundle] Échec lors de la récupération des clés pour ${recipientId}:`, err);
+    throw err;
+  }
 }

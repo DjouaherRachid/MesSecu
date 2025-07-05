@@ -10,10 +10,11 @@ import {
 import { Message } from '../message/message.entity';
 import { ConversationParticipant } from '../conversation/conversation-participant.entity';
 import { MessageRead } from '../message/message-read.entity';
-import { OneTimePreKey } from 'src/keys/one-time-pre-key/one-time-pre-key.entity';
-import { Session } from 'src/session/session.entity';
-import { IdentityKey } from 'src/keys/identity-key/identity-key.entity';
-import { SignedPreKey } from 'src/keys/signed-pre-key/signed-pre-key.entity';
+import { OneTimePreKey } from '../keys/one-time-pre-key/one-time-pre-key.entity';
+import { Session } from '../session/session.entity';
+import { IdentityKey } from '../keys/identity-key/identity-key.entity';
+import { SignedPreKey } from '../keys/signed-pre-key/signed-pre-key.entity';
+import { ConversationKey } from '../keys/conversation-key/conversation-keys.entity';
 
 @Entity('users')
 export class User {
@@ -31,6 +32,9 @@ export class User {
 
   @Column('text', { nullable: true })
   avatar_url: string | null;
+
+  @Column('text', { nullable: false })
+  rsa_public_key : string ;
 
   @Column({ default: false })
   is_admin: boolean;
@@ -67,4 +71,7 @@ export class User {
 
   @OneToMany(() => SignedPreKey, signedPreKey => signedPreKey.user, { cascade: true })
   signed_pre_keys: SignedPreKey[];
+
+  @OneToMany(() => ConversationKey, ck => ck.user)
+  conversation_keys: ConversationKey[];
 }

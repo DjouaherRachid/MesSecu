@@ -3,9 +3,15 @@ import './left-sidebar.css';
 import SearchBar from '../searchbar/searchbar';
 import ConversationCard from '../conversation-card/conversation-card';
 import { fetchMyConversations } from '../../api/conversations';
-import { fetchFavoriteConversations } from '../../api/conversation-participant';
-import { Conversation } from '../../types/conversation';
+import { Conversation, EncryptedConversation } from '../../types/conversation';
 import { useSocket } from '../../context/socket-context';
+import { decryptWithAesGcm, generateAndStoreAesKey, getOrFetchAesKey, getStoredAesKey } from '../../utils/AES-GSM/aes';
+import { logoutUser } from '../../api/auth';
+import { useNavigate } from 'react-router-dom';
+import { exportKeyPairToJson, saveKeyPairAsFile } from '../../utils/AES-GSM/key-export-import';
+import Cookies from 'js-cookie';
+import { fetchRsaPublicKey } from '../../api/rsa-key';
+import { importPrivateKey, importPublicKey } from '../../utils/AES-GSM/rsa';
 
 type LeftSidebarProps = {
   setConversation: (conv: Conversation) => void;
@@ -14,16 +20,14 @@ type LeftSidebarProps = {
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAction }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [favorites, setFavorites] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const socket = useSocket();
+  const navigate = useNavigate();
 
   const filteredConversations = useMemo(() => {
     const lower = searchTerm;
-
-    console.log('Filtering conversations with search term:', lower);
 
     return conversations.filter(conv => {
       const nameMatch = conv.name?.toLowerCase().includes(lower);
@@ -54,19 +58,43 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
 
     const loadConversations = async () => {
       try {
-        const [allConvs, favoriteConvs] = await Promise.all([
+        const [allConvs] = await Promise.all([
           fetchMyConversations(),
-          fetchFavoriteConversations()
-        ]) as [Conversation[], Conversation[]];
+        ]) as [EncryptedConversation[]];
 
-        // Joindre les rooms socket des conversations pour recevoir les événements en temps réel
-        allConvs.forEach((conv) => {
+        const decryptedConvs = await Promise.all(
+          allConvs.map(async (conv) => {
+            const lastMessage = conv.last_message;
+
+            if (lastMessage && lastMessage.content) {
+              try {
+              const aesKey = await getOrFetchAesKey(conv.id, lastMessage.sender_id);
+
+                const decryptedContent = await decryptWithAesGcm(lastMessage.content, aesKey);
+
+                return {
+                  ...conv,
+                  last_message: {
+                    ...lastMessage,
+                    content: decryptedContent,
+                    sender_name: lastMessage.sender_name || 'Inconnu',
+                  },
+                };
+              } catch (err) {
+                console.error(`[loadConversations] Erreur lors du déchiffrement du message ${lastMessage.message_id}:`, err);
+                return conv;
+              }
+            }
+
+            return conv;
+          })
+        );
+
+        decryptedConvs.forEach((conv) => {
           socket.emit('join_conversation', { conversationId: conv.id });
-          console.log(`[Socket] Joined room conversation_${conv.id}`);
         });
 
-        setConversations(allConvs);
-        setFavorites(favoriteConvs);
+        setConversations(decryptedConvs as Conversation[]);
       } catch (err: any) {
         setError(err?.message || 'Erreur inconnue lors du chargement');
       } finally {
@@ -74,29 +102,30 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
       }
     };
 
-    const handleNewMessage = (payload: any) => {
-      console.log('[Socket] Nouveau message reçu:', payload.conversation);
+    const handleNewMessage = async (payload: any) => {
       if (payload?.conversationId && payload.message) {
-        const newLastMessage = {
-          ...payload.message,
-          sender_name: payload.message.sender?.name || 'Inconnu',
-        };
+        try {
+          const aesKey = await getOrFetchAesKey(payload.conversationId, payload.message.sender.user_id);
 
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.id === payload.conversationId
-              ? { ...conv, last_message: newLastMessage }
-              : conv
-          )
-        );
+          const decryptedContent = await decryptWithAesGcm(payload.message.content, aesKey);
 
-        setFavorites((prev) =>
-          prev.map((conv) =>
-            conv.id === payload.conversationId
-              ? { ...conv, last_message: newLastMessage }
-              : conv
-          )
-        );
+          const newLastMessage = {
+            ...payload.message,
+            content: decryptedContent,
+            sender_name: payload.message.sender?.name || 'Inconnu',
+            signal_type: 1,
+          };
+
+          setConversations(prev =>
+            prev.map(conv =>
+              conv.id === payload.conversationId
+                ? { ...conv, last_message: newLastMessage }
+                : conv
+            )
+          );
+        } catch (err) {
+          console.error('[handleNewMessage] Erreur lors du déchiffrement du message :', err);
+        }
       }
     };
 
@@ -114,7 +143,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
         });
         return;
       }
-      console.log(`Message ${messageId} lu dans la conversation ${conversationId}`);
 
       const updateSeen = (convs: Conversation[]) =>
         convs.map((conv) =>
@@ -130,11 +158,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
         );
 
       setConversations((prev) => updateSeen(prev));
-      setFavorites((prev) => updateSeen(prev));
     };
 
     const handleNewConversation = (payload: { conversation: Conversation }) => {
-      console.log('[Socket] Nouvelle conversation reçue:', payload.conversation);
       setConversations((prev) => {
         if (prev.some((conv) => conv.id === payload.conversation.id)) return prev;
         return [payload.conversation, ...prev];
@@ -158,6 +184,21 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
     };
   }, [socket]);
 
+  async function importKeyPairAsFile() {
+    try {
+      const userId = parseInt(Cookies.get('userId') || '0', 10);
+      const { rsa_public_key } = await fetchRsaPublicKey(userId);
+      const publicKey= rsa_public_key;
+      const privateKey = localStorage.getItem(`privateKey_${userId}`);
+
+      saveKeyPairAsFile({privateKey :privateKey as string, publicKey : publicKey},);
+
+
+    } catch (error) {
+      console.error('Erreur lors de la récupération des clés RSA :', error);
+    }
+  }
+
   if (loading) return <div>Chargement des conversations...</div>;
   if (error) return <div>Erreur : {error}</div>;
 
@@ -177,33 +218,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
       </div>
 
       <SearchBar onSearch={setSearchTerm} />
-
-      {/* Favoris */}
-      <ul className="vertical ex">
-        {favorites.map((conv) => (
-          <ConversationCard
-            key={conv.id}
-            picture={conv.picture || ''}
-            usernames={
-              conv.other_users
-                ? Array.isArray(conv.other_users)
-                  ? conv.other_users
-                  : [conv.other_users]
-                : [{ username: 'moi', avatar_url: '' }]
-            }
-            name={conv.name || ''}
-            updatedAt={new Date(
-              conv.last_message && conv.last_message.message_id !== 0
-                ? conv.last_message.created_at
-                : conv.updated_at
-            ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            lastMessage={conv.last_message?.content || ''}
-            isSeen={conv.last_message?.seen}
-            senderName={conv.last_message?.sender_name}
-            onClick={() => setConversation(conv)}
-          />
-        ))}
-      </ul>
 
       <h2>Conversations :</h2>
       <ul className="vertical ex">
@@ -236,6 +250,32 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ setConversation, addButtonAct
           />
         ))}
       </ul>
+
+      <div className="sidebar-footer">
+        <button
+          type="button"
+          className="download-button"
+          onClick={() => {
+            importKeyPairAsFile();
+          }}
+        >
+          <span>Télécharger les clés</span>
+        </button>
+
+        <button
+          type="button"
+          className="delete-button"
+          onClick={() => {
+          if (window.confirm('Voulez-vous vraiment vous déconnecter ?')) {
+            logoutUser();
+            navigate('/signin', { replace: true });
+            }
+          }}
+        >
+          <span>Déconnexion</span>
+        </button>
+      </div>
+
     </div>
   );
 };

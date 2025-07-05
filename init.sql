@@ -8,7 +8,8 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    rsa_public_key TEXT NOT NULL
 );
 
 -- Table: conversations
@@ -42,6 +43,7 @@ CREATE TABLE messages (
     sender_id INT NOT NULL,
     content TEXT NOT NULL,
     encrypted BOOLEAN DEFAULT TRUE,
+    signal_type INT NOT NULL, -- 1 for SignalMessage, 3 for PreKeySignalMessage
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     delivered_at TIMESTAMP,
@@ -96,6 +98,15 @@ CREATE TABLE sessions (
     created_at TIMESTAMP DEFAULT now(),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (peer_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE conversation_keys (
+  id SERIAL PRIMARY KEY,
+  conversation_id INT REFERENCES conversations(conversation_id),
+  user_id INT REFERENCES users(user_id),
+  encrypted_aes_key TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Trigger function for automatic updated_at

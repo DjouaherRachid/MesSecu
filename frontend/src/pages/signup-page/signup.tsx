@@ -4,10 +4,12 @@ import { validate } from 'react-email-validator';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import instance from '../../api/instance';
-import { generateInitialKeyBundle, storeKeysLocally, uploadKeyBundleToServer } from '../../utils/crypto/key-manager';
-import { base64ToArrayBuffer } from '../../utils/encoding';
+import { handleSignalKeyGenerationAndStorage } from './signal';
+import { loginUser, registerUser } from '../../api/auth';
+import { handleRSAKeyGenerationAndStorage } from '../../utils/AES-GSM/rsa';
+import { clearAllBrowserData } from '../../utils/delete-browser-data';
+import { exportKeyPairToJson, saveKeyPairAsFile } from '../../utils/AES-GSM/key-export-import';
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
-console.log('INTERNAL_API_KEY:', INTERNAL_API_KEY);
 
 const SignUp = () => {
 
@@ -39,107 +41,100 @@ const SignUp = () => {
       return passwordRegex.test(password) && hasNoSpaces;
     }
 
-    const handleSignupSubmission = async (e: { preventDefault: () => void; }) => {
+    async function rollBackChanges() {
+                const userId = Cookies.get('userId');
+          // Rollback si la création des clés échoue
+          if (userId) {
+            try {
+              await instance.delete(`/internal/users/${userId}`, {
+                headers: { 'x-internal-api-key': INTERNAL_API_KEY }
+              });
+              alert('La création de l\'utilisateur a été annulée en raison d\'une erreur lors de la configuration des clés.');
+            } catch (deleteError) {
+              console.error('Échec de la suppression de l\'utilisateur après l\'échec de la configuration des clés :', deleteError);
+              alert('Erreur critique : utilisateur créé mais échec de la configuration des clés.');
+            }
+          } else {
+            alert('Erreur réseau. Veuillez réessayer plus tard.');
+          }
+    }
+
+    const handleSignupSubmission = async (e: { preventDefault: () => void }) => {
       e.preventDefault();
-      const valid = await validate(signup_email); 
+      clearAllBrowserData();
+
+      // Validation email + mot de passe
+      const valid = await validate(signup_email);
       if (!valid) {
-        alert('Please enter a valid email address.');
+        alert('Veuillez entrer une adresse e-mail valide.');
         return;
       }
 
       const isValidPassword = validatePassword(signup_password);
-      console.log("signup_password", signup_password);
-      console.log("isValidPassword", isValidPassword);
-
       if (!isValidPassword) {
-        alert('Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        alert('Le mot de passe doit comporter au moins 8 caractères, contenir au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial.');
         return;
       }
 
-      instance.post('/auth/register', {
-        username: signup_username,
-        email: signup_email,
-        password: signup_password,
-      })
-      .then(async response => {
-        const { message, userId } = response.data;
-        // Traitement pour une création réussie
-        console.log('User created successfully with ID:', response.data);
-        console.log("email", signup_email);
+      try {
+        const payload = {
+          email: signup_email,
+          username: signup_username,
+          password: signup_password,
+          rsa_public_key: 'placeholder' 
+        };
+
+        // Enregistrement utilisateur
+        const response = await registerUser(payload);
+
+        const { message, userId } = response;
         Cookies.set('email', signup_email, { expires: 1 });
         Cookies.set('userId', userId.toString(), { expires: 1 });
+        
+        alert('Votre compte a été créé avec succès.');
 
-        try{
-        // Générer les clés localement
-        const keyBundle = await generateInitialKeyBundle();
-        const oneTimePreKeyArray = keyBundle.oneTimePreKeys.map(preKey => ({
-          key_id: preKey.key_id,
-          keyPair: {
-            pubKey: new Uint8Array(preKey.public_key),
-            privKey: preKey.private_key ? new Uint8Array(preKey.private_key) : undefined,
-          },
-        }));
+          const loginResponse = await loginUser({
+                email: signup_email,
+                password: signup_password});
+        
+          const { accessToken } = loginResponse;
+        
+          Cookies.set('email', signup_email, { expires: 1 });
+          Cookies.set('accessToken', accessToken, {
+                  expires: 15,
+                  secure: true,
+                  sameSite: 'Strict',
+                });
+          Cookies.set('userId', userId.toString(), { expires: 1 });
 
-        // Stocker les clés localement dans IndexedDB
-        await storeKeysLocally({
-          identity_key: {
-            pubKey: new Uint8Array(base64ToArrayBuffer(keyBundle.identityKey.public_key)),
-            privKey: new Uint8Array(keyBundle.identityKey.private_key),
-          },
-          registration_id: keyBundle.registrationId, 
-          signed_pre_key: {
-            key_id: keyBundle.signedPreKey.key_id,
-            keyPair: {
-              pubKey: new Uint8Array(base64ToArrayBuffer(keyBundle.signedPreKey.public_key)),
-              privKey: new Uint8Array(keyBundle.signedPreKey.private_key),
-            },
-            signature: new Uint8Array(base64ToArrayBuffer(keyBundle.signedPreKey.signature)),
-          },
-          one_time_pre_keys: oneTimePreKeyArray,
-        });
+        // Gestion des clés 
+        // await handleSignalKeyGenerationAndStorage(userId);
+        const keys = await handleRSAKeyGenerationAndStorage(userId);
 
+        // Exporter la paire de clés en JSON et la télécharger
+        const keyPairJson = await exportKeyPairToJson(keys.privateKey, keys.publicKey);
+        saveKeyPairAsFile(keyPairJson, `rsa-keypair-${userId}.json`);
+        alert("Votre clé privée a été téléchargée. Conservez-la précieusement, elle est indispensable pour accéder à vos messages chiffrés si vous changez d'appareil ou de navigateur.");
 
-        console.log('Generated key bundle:', keyBundle);
-        console.log('response:', response);
-
-        // Envoyer les clés au backend
-        await uploadKeyBundleToServer(userId, keyBundle);
-      } catch (error) {
-            // Annulation de l'utilisateur si les clés ne peuvent pas être générées ou envoyées
-            try {
-              await instance.delete(`/internal/users/${userId}`, {
-                headers: {
-                  'x-internal-api-key': INTERNAL_API_KEY, 
-                }
-              });
-              alert('User creation rolled back due to an error during key setup.');
-            } catch (deleteError) {
-              console.error('Failed to delete user after key setup failure:', deleteError);
-              alert('Critical error: user created but key setup failed.');
-            }
-          }
-
-        alert('Your account has been registered successfully!');
         navigate('/dashboard');
-      })
-      .catch(async error => {
 
+      } catch (error: any) {
+        await rollBackChanges(); // Rollback en cas d'erreur
+        // Gestion des erreurs
         if (error.response) {
           if (error.response.status === 409) {
-            console.log('Email or username already exists',error);
             alert('Email or username already exists');
           } else {
-            console.log('An error occurred:', error.response.statusText);
-            alert('An error occured:');
+            console.error('An error occurred:', error.response.statusText);
+            alert('An error occurred during registration.');
           }
         } else {
-          console.error('Network error:', error);
-          alert('Network error:');
+          console.error('Network or key error:', error);
+          
         }
-      });    
-
+      }
     };
-  
+
     return (
       <div className="animated-background">
       <div className='center-container'>

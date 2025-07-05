@@ -29,6 +29,9 @@ export class Message {
   @Column({ default: true })
   encrypted: boolean;
 
+  @Column({ default: 3 })
+  signal_type: number; // 1 for SignalMessage, 3 for PreKeySignalMessage
+
   @CreateDateColumn()
   created_at: Date;
 

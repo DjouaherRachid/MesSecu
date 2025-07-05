@@ -6,6 +6,7 @@ import { fetchMyContacts } from "../../../api/users";
 import { useSocket } from "../../../context/socket-context";
 import Cookies from "js-cookie";
 import { createConversation } from "../../../api/conversations";
+import { prepareEncryptedAesKeysForParticipants, storeAesKey } from "../../../utils/AES-GSM/aes";
 
 interface ModalProps {
   isOpen: boolean;
@@ -56,7 +57,19 @@ const CreateConversationModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
     try {
       const newConversation = await createConversation(conversationName, selectedContacts);
-      console.log("Conversation créée:", newConversation);
+
+      const conversationId = newConversation.conversation_id;
+
+      // 2. Générer une clé AES-GCM
+
+      const currentUserId = parseInt(Cookies.get('userId') as string, 10);
+
+      const participantIds = [...selectedContacts, currentUserId];
+
+      const aesKey = await prepareEncryptedAesKeysForParticipants(conversationId, participantIds);
+
+      await storeAesKey(conversationId, aesKey);
+      
       onClose(); // fermer la modale après création réussie
       // Réinitialiser états si besoin
       setConversationName("");

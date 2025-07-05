@@ -19,6 +19,9 @@ import { IdentityKeysModule } from './keys/identity-key/identity-key.module';
 import { OneTimePreKeyModule } from './keys/one-time-pre-key/one-time-pre-key.module';
 import { SignedPreKeysModule } from './keys/signed-pre-key/signed-pre-key.module';
 import { SessionModule } from './session/session.module';
+import { ConversationKey } from './keys/conversation-key/conversation-keys.entity';
+import { RsaKeyModule } from './keys/rsa-key/rsa-key.module';
+import { ConversationKeyModule } from './keys/conversation-key/conversation-key.module';
 
 @Module({
   imports: [
@@ -29,7 +32,7 @@ import { SessionModule } from './session/session.module';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [User, Message, Conversation, ConversationParticipant, MessageRead, OneTimePreKey, IdentityKey, SignedPreKey, Session],
+      entities: [User, Message, Conversation, ConversationParticipant, MessageRead, OneTimePreKey, IdentityKey, SignedPreKey, Session, ConversationKey],
       synchronize: false,
     }),
     UserModule,
@@ -42,6 +45,8 @@ import { SessionModule } from './session/session.module';
     OneTimePreKeyModule,
     SignedPreKeysModule,
     SessionModule,
+    RsaKeyModule,
+    ConversationKeyModule
   ],
 })
 export class AppModule {}

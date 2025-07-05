@@ -24,14 +24,11 @@ export class UserService {
   ) {}
 
   async create(user: Partial<User>) {
-    console.log('[UserService] Tentative de création de l’utilisateur :', user);
-
     if (!user.username) throw new UsernameMissingException();
     if (!user.email) throw new EmailMissingException();
 
     try {
       const savedUser = await this.userRepository.save(user);
-      console.log('[UserService] Utilisateur enregistré avec succès :', savedUser);
       return savedUser;
     } catch (error: any) {
       if (error.code === '23505') {
@@ -39,7 +36,6 @@ export class UserService {
         if (error.detail?.includes('email')) throw new EmailAlreadyExistsException();
       }
 
-      console.error('[UserService] Erreur inconnue :', error);
       throw new InternalServerErrorException('Erreur inattendue lors de la création.');
     }
   }

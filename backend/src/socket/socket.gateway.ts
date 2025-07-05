@@ -92,6 +92,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     data: {
       conversationId: number;
       content: string;
+      signal_type: number; 
     },
     @ConnectedSocket() client: Socket,
   ) {
@@ -127,12 +128,14 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         conversation_id: data.conversationId,
         content: data.content,
         sender_id: sender.sub,
+        signal_type: data.signal_type || 1, // Par défaut, on utilise le type 1
       });
 
       // Charger les relations nécessaires (ex: sender, reads) pour la diffusion
       const messageWithRelations = await this.messageService.findById(newMessage.message_id);
 
       // ✅ 2. Diffusion à la room
+      console.log(`[Gateway] Diffusion du message ${newMessage.message_id} à la conversation ${data.conversationId}`);
       const room = `conversation_${data.conversationId}`;
       this.server.to(room).emit('new_message', {
         conversationId: data.conversationId,
@@ -144,6 +147,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
             name: messageWithRelations.sender.username,
             avatar: messageWithRelations.sender.avatar_url || null,
           },
+          conversation_id: data.conversationId,
           created_at: messageWithRelations.created_at,
           reads: (messageWithRelations.reads || []).map(read => ({
             user_id: read.user_id,
